@@ -32,6 +32,7 @@ class Trace:
         self.WELL_ID = [[l+str(i).zfill(2) for l in string.ascii_uppercase[:16]] for i in range(1,25)]
         self.NofSweeps = self.MeasurementLayout['NofSweeps']
         self.WP_nRows = TraceHeader['Chiplayout']['WP_nRows']
+        self.WP_nCols = TraceHeader['Chiplayout']['WP_nCols']
         self.nCols = self.MeasurementLayout['nCols'] 
         self.NofSamples = self.MeasurementLayout['NofSamples']
         self.Leakdata = self.MeasurementLayout['Leakdata']
@@ -195,4 +196,32 @@ class Trace:
 
                 idx_i = idx_f # update idx_i
             del(trace)
+        return OUT
+    
+    def QC(self, sweep=None):
+        '''
+        Read quality control values Rseal, Cslow (Cm), and Rseries from Nanion .json file
+        '''
+
+        # load QC values
+        RSeal = np.array(self.meta['QCData']['RSeal'])
+        Capacitance = np.array(self.meta['QCData']['Capacitance'])
+        Rseries = np.array(self.meta['QCData']['Rseries'])
+
+        # initialise output
+        OUT = {}
+        for iCol in self.WELL_ID:
+            for ijWell in iCol:
+                OUT[ijWell] = []
+
+        if sweep is None:
+            sweep = range(self.NofSweeps)
+
+        for k in sweep:
+            for i in range(self.WP_nCols):
+                for j in range(self.WP_nRows):
+                    OUT[self.WELL_ID[i][j]].append((RSeal[k][i][j],
+                                            Capacitance[k][i][j],
+                                            Rseries[k][i][j]))
+                    
         return OUT

@@ -18,6 +18,9 @@ def test_all_trace(trace):
 def test_get_trace_sweep(trace, sweep):
     return trace.get_trace_sweep(sweep)
 
+def test_QC(trace):
+    return trace.QC()
+
 if __name__ == "__main__":
     filepath = "test/test_files/"
     json_file = "cisapride_protocol_11.13.12"
@@ -28,6 +31,7 @@ if __name__ == "__main__":
     ts = test_times(test_trace) # get times  
     all_trace = test_all_trace(test_trace) # get all traces
     some_sweeps = test_get_trace_sweep(test_trace, [0, 1, 2])['A01'] # get some sweeps
+    QC = test_QC(test_trace) # get QC values
     print("All test passed")
     
     ### plot test output
