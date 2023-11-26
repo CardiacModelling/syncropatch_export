@@ -8,15 +8,16 @@ class Trace:
         self.json_file = json_file
         with open(self.filepath + self.json_file) as f:
             self.meta = json.load(f)
+        TraceHeader = self.meta['TraceHeader']
         try:
-            self.TimeScaling = self.meta['TraceHeader']['TimeScaling']
+            self.TimeScaling = TraceHeader['TimeScaling']
         except KeyError:
-            self.TimeScaling = self.meta['TraceHeader']['TimeScalingIV']
-        self.MeasurementLayout = self.meta['TraceHeader']['MeasurementLayout']
-        self.FileInformation = self.meta['TraceHeader']['FileInformation']
+            self.TimeScaling = TraceHeader['TimeScalingIV']
+        self.MeasurementLayout = TraceHeader['MeasurementLayout']
+        self.FileInformation = TraceHeader['FileInformation']
         self.WELL_ID = [[l+str(i).zfill(2) for l in string.ascii_uppercase[:16]] for i in range(1,25)]
         self.NofSweeps = self.MeasurementLayout['NofSweeps']
-        self.WP_nRows = self.meta['TraceHeader']['Chiplayout']['WP_nRows']
+        self.WP_nRows = TraceHeader['Chiplayout']['WP_nRows']
         self.nCols = self.MeasurementLayout['nCols'] 
         self.NofSamples = self.MeasurementLayout['NofSamples']
         self.Leakdata = self.MeasurementLayout['Leakdata']
