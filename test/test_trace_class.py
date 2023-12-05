@@ -22,10 +22,10 @@ def test_QC(trace):
     return trace.QC()
 
 if __name__ == "__main__":
-    filepath = "test/test_files/"
+    filepath = "test/test_files/cisapride/"
     json_file = "cisapride_protocol_11.13.12"
     test_trace = tr(filepath, json_file)
-    
+
     ### test trace class attributes
     v = test_voltage(test_trace) # get voltage
     ts = test_times(test_trace) # get times  
