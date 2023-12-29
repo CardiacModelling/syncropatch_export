@@ -2,6 +2,7 @@ import json
 import numpy as np
 import string
 
+
 class Trace:
     '''
     Defines a Trace object from the output of a Nanion experiment.
@@ -16,11 +17,11 @@ class Trace:
             self.json_file = json_file
         else:
             self.json_file = json_file + ".json"
-        
+
         # load json file
         with open(self.filepath + self.json_file) as f:
             self.meta = json.load(f)
-        
+
         # store necessary header info
         TraceHeader = self.meta['TraceHeader']
         try:
@@ -33,7 +34,7 @@ class Trace:
         self.NofSweeps = self.MeasurementLayout['NofSweeps']
         self.WP_nRows = TraceHeader['Chiplayout']['WP_nRows']
         self.WP_nCols = TraceHeader['Chiplayout']['WP_nCols']
-        self.nCols = self.MeasurementLayout['nCols'] 
+        self.nCols = self.MeasurementLayout['nCols']
         self.NofSamples = self.MeasurementLayout['NofSamples']
         self.Leakdata = self.MeasurementLayout['Leakdata']
         self.SweepsPerFile = self.FileInformation['SweepsPerFile']
@@ -47,18 +48,18 @@ class Trace:
         Returns the voltage stimulus from Nanion .json file
         '''
         return self.TimeScaling['Stimulus']
-        
+
     def times(self):
         '''
         Returns the time steps from Nanion .json file
         '''
         return self.TimeScaling['TR_Time']
-        
+
     def all_traces(self, leakcorrect=False):
         '''
         Returns all raw current traces from .dat files
         '''
-        
+
         # initialise output
         OUT = {}
         for iCol in self.WELL_ID:
@@ -74,20 +75,20 @@ class Trace:
                 totalSweep = self.SweepsPerFile
             currentSweep += self.SweepsPerFile
             assert(totalSweep > 0)
-            
+
             # get trace data
             with open(self.filepath + trace_file, 'r') as f:
                 trace = np.fromfile(f, dtype=np.int16)
-            
+
             # convert to numpy array
             trace = np.asarray(trace)
-            
+
             # check loaded traces have the expected length
             assert(len(trace) == self.Leakdata * self.NofSamples * self.WP_nRows
                                 * self.nCols * totalSweep)
             idx_i = 0
-            
-            # loop through sweeps and columns 
+
+            # loop through sweeps and columns
             for kSweep in range(totalSweep):
                 for i, iCol in enumerate(self.ColsMeasured):
                     if iCol == -1:
@@ -95,10 +96,10 @@ class Trace:
 
                     idx_f = idx_i + self.Leakdata * self.NofSamples * self.WP_nRows
                     assert(idx_f <= len(trace))
-                    
+
                     # convert to double in pA
                     iColTraces = np.array(trace[idx_i:idx_f]) * self.I2DScale[i] * 1e12
-                    
+
                     iColWells = self.WELL_ID[i]
                     for j, ijWell in enumerate(iColWells):
                         if leakcorrect:
@@ -114,7 +115,7 @@ class Trace:
                     idx_i = idx_f # update idx_i
             del(trace)
         return OUT
-  
+
     def get_trace_file(self, sweeps):
         '''
         Returns the trace file index of the file for a given set of sweeps
@@ -138,47 +139,47 @@ class Trace:
         '''
         Returns a subset of sweeps defined by the input 'sweeps'
         '''
-        
+
         # initialise output
         OUT = {}
         for iCol in self.WELL_ID:
             for ijWell in iCol:
                 OUT[ijWell] = []
-        
+
         # check `getsweep` input is something sensible
         if len(sweeps) > self.NofSweeps:
             raise ValueError('Required #sweeps > total #sweeps.')
-        
+
         # convert negative values to positive
         for i, sweep in enumerate(sweeps):
             if sweep < 0:
                 sweeps[i] = self.NofSweeps + sweep
-        
+
         trace_file_idxs, idx_is = self.get_trace_file(sweeps)
-        
+
         for trace_file_idx, idx_i in zip(trace_file_idxs, idx_is):
             if trace_file_idx < len(self.FileList) - 1:
                 totalSweep = self.SweepsPerFile
             else:
                 totalSweep = self.NofSweeps % self.SweepsPerFile
-            
+
             # get trace data
             trace_file = self.FileList[trace_file_idx]
             with open(self.filepath + trace_file, 'r') as f:
                 trace = np.fromfile(f, dtype=np.int16)
-            
+
             # convert to numpy array
             trace = np.asarray(trace)
-            
+
             # check loaded traces have the expected length
             assert(len(trace) == self.Leakdata * self.NofSamples * self.WP_nRows
                                 * self.nCols * totalSweep)
-            
+
             for i, iCol in enumerate(self.ColsMeasured):
                 if iCol == -1:
                     continue # -1 not measured (need to doublecheck this)
                 idx_f = idx_i + self.Leakdata * self.NofSamples * self.WP_nRows
-                
+
                 # convert to double in pA
                 iColTraces = trace[idx_i:idx_f] * self.I2DScale[i] * 1e12
                 iColWells = self.WELL_ID[i]
@@ -197,7 +198,7 @@ class Trace:
                 idx_i = idx_f # update idx_i
             del(trace)
         return OUT
-    
+
     def QC(self, sweep=None):
         '''
         Read quality control values Rseal, Cslow (Cm), and Rseries from Nanion .json file
@@ -223,5 +224,5 @@ class Trace:
                     OUT[self.WELL_ID[i][j]].append((RSeal[k][i][j],
                                             Capacitance[k][i][j],
                                             Rseries[k][i][j]))
-                    
+
         return OUT
