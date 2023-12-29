@@ -31,8 +31,11 @@ class Trace:
             self.TimeScaling = TraceHeader['TimeScalingIV']
         self.MeasurementLayout = TraceHeader['MeasurementLayout']
         self.FileInformation = TraceHeader['FileInformation']
+
         self.WELL_ID = [
-            [l+str(i).zfill(2) for l in string.ascii_uppercase[:16]] for i in range(1, 25)]
+            [lab + str(i).zfill(2) for lab in string.ascii_uppercase[:16]]\
+            for i in range(1, 25)]
+
         self.NofSweeps = self.MeasurementLayout['NofSweeps']
         self.WP_nRows = TraceHeader['Chiplayout']['WP_nRows']
         self.WP_nCols = TraceHeader['Chiplayout']['WP_nCols']
