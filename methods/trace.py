@@ -10,6 +10,7 @@ class Trace:
     filepath - path pointing to folder containing .json and .dat files (str)
     json_file - specific filename of json file (str)
     '''
+
     def __init__(self, filepath, json_file):
         # store file paths
         self.filepath = filepath
@@ -30,7 +31,8 @@ class Trace:
             self.TimeScaling = TraceHeader['TimeScalingIV']
         self.MeasurementLayout = TraceHeader['MeasurementLayout']
         self.FileInformation = TraceHeader['FileInformation']
-        self.WELL_ID = [[l+str(i).zfill(2) for l in string.ascii_uppercase[:16]] for i in range(1,25)]
+        self.WELL_ID = [
+            [l+str(i).zfill(2) for l in string.ascii_uppercase[:16]] for i in range(1, 25)]
         self.NofSweeps = self.MeasurementLayout['NofSweeps']
         self.WP_nRows = TraceHeader['Chiplayout']['WP_nRows']
         self.WP_nCols = TraceHeader['Chiplayout']['WP_nCols']
@@ -43,19 +45,19 @@ class Trace:
         self.FileList = self.FileInformation['FileList']
         self.FileList.sort()
 
-    def voltage(self):
+    def get_voltage(self):
         '''
         Returns the voltage stimulus from Nanion .json file
         '''
         return self.TimeScaling['Stimulus']
 
-    def times(self):
+    def get_times(self):
         '''
         Returns the time steps from Nanion .json file
         '''
         return self.TimeScaling['TR_Time']
 
-    def all_traces(self, leakcorrect=False):
+    def get_all_traces(self, leakcorrect=False):
         '''
         Returns all raw current traces from .dat files
         '''
@@ -74,7 +76,7 @@ class Trace:
             else:
                 totalSweep = self.SweepsPerFile
             currentSweep += self.SweepsPerFile
-            assert(totalSweep > 0)
+            assert totalSweep > 0
 
             # get trace data
             with open(self.filepath + trace_file, 'r') as f:
@@ -84,21 +86,24 @@ class Trace:
             trace = np.asarray(trace)
 
             # check loaded traces have the expected length
-            assert(len(trace) == self.Leakdata * self.NofSamples * self.WP_nRows
-                                * self.nCols * totalSweep)
+            assert len(trace) == self.Leakdata * self.NofSamples \
+                * self.WP_nRows * self.nCols * totalSweep
             idx_i = 0
 
             # loop through sweeps and columns
             for kSweep in range(totalSweep):
                 for i, iCol in enumerate(self.ColsMeasured):
                     if iCol == -1:
-                        continue # -1 not measured (need to doublecheck this)
+                        # -1 not measured (TODO doublecheck this)
+                        continue
 
-                    idx_f = idx_i + self.Leakdata * self.NofSamples * self.WP_nRows
-                    assert(idx_f <= len(trace))
+                    idx_f = idx_i + self.Leakdata * \
+                        self.NofSamples * self.WP_nRows
+                    assert idx_f <= len(trace)
 
                     # convert to double in pA
-                    iColTraces = np.array(trace[idx_i:idx_f]) * self.I2DScale[i] * 1e12
+                    iColTraces = np.array(
+                        trace[idx_i:idx_f]) * self.I2DScale[i] * 1e12
 
                     iColWells = self.WELL_ID[i]
                     for j, ijWell in enumerate(iColWells):
@@ -107,13 +112,14 @@ class Trace:
                         else:
                             leakoffset = 0
                         start = j * self.Leakdata * self.NofSamples \
-                                + leakoffset * self.NofSamples
+                            + leakoffset * self.NofSamples
                         end = j * self.Leakdata * self.NofSamples \
                             + (leakoffset + 1) * self.NofSamples
                         OUT[ijWell].append(iColTraces[start:end])
-                    del(iColTraces)
-                    idx_i = idx_f # update idx_i
-            del(trace)
+                    del iColTraces
+                    # update idx_i
+                    idx_i = idx_f
+            del trace
         return OUT
 
     def get_trace_file(self, sweeps):
@@ -172,12 +178,12 @@ class Trace:
             trace = np.asarray(trace)
 
             # check loaded traces have the expected length
-            assert(len(trace) == self.Leakdata * self.NofSamples * self.WP_nRows
-                                * self.nCols * totalSweep)
+            assert len(trace) == self.Leakdata * self.NofSamples\
+                * self.WP_nRows * self.nCols * totalSweep
 
             for i, iCol in enumerate(self.ColsMeasured):
                 if iCol == -1:
-                    continue # -1 not measured (need to doublecheck this)
+                    continue  # -1 not measured (need to doublecheck this)
                 idx_f = idx_i + self.Leakdata * self.NofSamples * self.WP_nRows
 
                 # convert to double in pA
@@ -190,18 +196,23 @@ class Trace:
                     else:
                         leakoffset = 0
                     start = j * self.Leakdata * self.NofSamples \
-                            + leakoffset * self.NofSamples
+                        + leakoffset * self.NofSamples
                     end = j * self.Leakdata * self.NofSamples \
                         + (leakoffset + 1) * self.NofSamples
                     OUT[ijWell].append(iColTraces[start:end])
 
-                idx_i = idx_f # update idx_i
-            del(trace)
+                # update idx_i
+                idx_i = idx_f
+            del trace
         return OUT
 
-    def QC(self, sweep=None):
-        '''
-        Read quality control values Rseal, Cslow (Cm), and Rseries from Nanion .json file
+    def get_onboard_QC_values(self, sweep=None):
+        '''Read quality control values Rseal, Cslow (Cm), and Rseries from a Nanion .json file
+
+        returns: A dictionary where the keys are the well e.g. 'A01' and the
+        values are the values used for onboard QC i.e., the seal resistance,
+        cell capacitance and the series resistance.
+
         '''
 
         # load QC values
@@ -222,7 +233,7 @@ class Trace:
             for i in range(self.WP_nCols):
                 for j in range(self.WP_nRows):
                     OUT[self.WELL_ID[i][j]].append((RSeal[k][i][j],
-                                            Capacitance[k][i][j],
-                                            Rseries[k][i][j]))
+                                                    Capacitance[k][i][j],
+                                                    Rseries[k][i][j]))
 
         return OUT
