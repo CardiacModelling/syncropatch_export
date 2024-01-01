@@ -1,4 +1,5 @@
 import json
+import os
 import numpy as np
 import string
 
@@ -6,21 +7,22 @@ import string
 class Trace:
     '''
     Defines a Trace object from the output of a Nanion experiment.
-    Required as input:
-    filepath - path pointing to folder containing .json and .dat files (str)
-    json_file - specific filename of json file (str)
+
+    @params
+    filepath: path pointing to folder containing .json and .dat files (str)
+    json_file: specific filename of json file (str)
     '''
 
-    def __init__(self, filepath, json_file):
+    def __init__(self, filepath, json_file: str):
         # store file paths
         self.filepath = filepath
-        if ".json" in json_file:
+        if json_file[-5:] == '.json':
             self.json_file = json_file
         else:
             self.json_file = json_file + ".json"
 
         # load json file
-        with open(self.filepath + self.json_file) as f:
+        with open(os.path.join(self.filepath, self.json_file)) as f:
             self.meta = json.load(f)
 
         # store necessary header info
@@ -47,6 +49,12 @@ class Trace:
         self.ColsMeasured = self.MeasurementLayout['ColsMeasured']
         self.FileList = self.FileInformation['FileList']
         self.FileList.sort()
+
+    def get_protocol_description(self):
+
+        voltage_trace = self.TimeScaling['Stimulus']
+
+
 
     def get_voltage(self):
         '''
@@ -82,7 +90,7 @@ class Trace:
             assert totalSweep > 0
 
             # get trace data
-            with open(self.filepath + trace_file, 'r') as f:
+            with open(os.path.join(self.filepath, trace_file), 'r') as f:
                 trace = np.fromfile(f, dtype=np.int16)
 
             # convert to numpy array
@@ -144,7 +152,7 @@ class Trace:
             OUT_idx_i.append(ReadOffset)
         return OUT_file_idx, OUT_idx_i
 
-    def get_trace_sweep(self, sweeps, leakcorrect=False):
+    def get_trace_sweeps(self, sweeps, leakcorrect=False):
         '''
         Returns a subset of sweeps defined by the input 'sweeps'
         '''
@@ -174,7 +182,7 @@ class Trace:
 
             # get trace data
             trace_file = self.FileList[trace_file_idx]
-            with open(self.filepath + trace_file, 'r') as f:
+            with open(os.path.join(self.filepath, trace_file), 'r') as f:
                 trace = np.fromfile(f, dtype=np.int16)
 
             # convert to numpy array
@@ -209,7 +217,7 @@ class Trace:
             del trace
         return OUT
 
-    def get_onboard_QC_values(self, sweep=None):
+    def get_onboard_QC_values(self, sweeps=None):
         '''Read quality control values Rseal, Cslow (Cm), and Rseries from a Nanion .json file
 
         returns: A dictionary where the keys are the well e.g. 'A01' and the
@@ -229,10 +237,10 @@ class Trace:
             for ijWell in iCol:
                 OUT[ijWell] = []
 
-        if sweep is None:
-            sweep = range(self.NofSweeps)
+        if sweeps is None:
+            sweeps = range(self.NofSweeps)
 
-        for k in sweep:
+        for k in sweeps:
             for i in range(self.WP_nCols):
                 for j in range(self.WP_nRows):
                     OUT[self.WELL_ID[i][j]].append((RSeal[k][i][j],

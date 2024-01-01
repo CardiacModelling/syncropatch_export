@@ -1,7 +1,7 @@
-#!/usr/bin/env python2
 import numpy as np
 import scipy.stats
 import os
+import logging
 
 import matplotlib.pyplot as plt
 
@@ -15,7 +15,8 @@ class hERGQC(object):
                'qc5.staircase', 'qc5.1.staircase',
                'qc6.subtracted', 'qc6.1.subtracted', 'qc6.2.subtracted']
 
-    def __init__(self, sampling_rate=5, plot_dir=None, voltage=np.array([])):
+    def __init__(self, sampling_rate=5, plot_dir=None, voltage=np.array([]),
+                 n_sweeps=None):
         '''
         #
         # \item[\textbf{qc1.rseal}] check rseal within [1e8, 1e12] \gary{Units on all these...}
@@ -41,7 +42,8 @@ class hERGQC(object):
 
         self._n_qc = 16
 
-        self.voltage = np.array(voltage)
+        # Convert to mV for convinience
+        self.voltage = np.array(voltage) * 1e3
 
         # Define all threshold here
         # qc1
@@ -94,28 +96,40 @@ class hERGQC(object):
     def set_fcap(self, fcap):
         self.fcap = fcap
 
-    def set_trace(self, before, after, qc_before, qc_after, n_sweeps):
+    def set_trace(self, before, after, qc_vals_before,
+                  qc_vals_after, n_sweeps):
         self._before = before
-        self._qc_before = qc_before
+        self._qc_vals_before = qc_vals_before
         self._after = after
-        self._qc_after = qc_after
-        self._n_sweeps = n_sweeps
+        self._qc_vals_after = qc_vals_after
 
     def set_debug(self, debug):
         self._debug = debug
 
-    def _run_qc(self):
+    def run_qc(self, before=None, after=None, qc_vals_before=None,
+               qc_vals_after=None, n_sweeps=None):
         """Run each QC criteria on a single (before-trace, after-trace) pair.
 
         This requires self._before, and self._after should only be called by
         self.run_hergqc.
         """
 
-        before = self._before
-        qc_before = self._qc_before[0]
-        after = self._after
-        qc_after = self._qc_after[0]
-        if (None in qc_before) or (None in qc_after):
+        if before is None:
+            before = self.before
+
+        if not n_sweeps:
+            n_sweeps = len(before)
+
+        if after is None:
+            after = self.after
+
+        if qc_vals_before is None:
+            qc_vals_before = self.qc_vals_before
+
+        if qc_vals_after is None:
+            qc_vals_after = self.qc_vals_after
+
+        if (None in qc_vals_before) or (None in qc_vals_after):
             return False, [False] * 3 + [None] * 13
 
         # Filter off capacitive spikes
@@ -124,13 +138,13 @@ class hERGQC(object):
                 before[i] = before[i] * self.fcap
                 after[i] = after[i] * self.fcap
 
-        qc1_1 = self.qc1(*qc_before)
-        qc1_2 = self.qc1(*qc_after)
+        qc1_1 = self.qc1(*qc_vals_before)
+        qc1_2 = self.qc1(*qc_vals_after)
         qc1 = [i and j for i, j in zip(qc1_1, qc1_2)]
 
         qc2_1 = True
         qc2_2 = True
-        for i in range(self._n_sweeps):
+        for i in range(n_sweeps):
             qc2_1 = qc2_1 and self.qc2(before[i])
             qc2_2 = qc2_2 and self.qc2(before[i] - after[i])
 
@@ -139,9 +153,9 @@ class hERGQC(object):
         qc3_3 = self.qc3(before[0] - after[0],
                          before[1] - after[1])
 
-        rseals = [qc_before[0], qc_after[0]]
-        cms = [qc_before[1], qc_after[1]]
-        rseriess = [qc_before[2], qc_after[2]]
+        rseals = [qc_vals_before[0], qc_vals_after[0]]
+        cms = [qc_vals_before[1], qc_vals_after[1]]
+        rseriess = [qc_vals_before[2], qc_vals_after[2]]
         qc4 = self.qc4(rseals, cms, rseriess)
 
         qc5 = self.qc5(before[0], after[0],
@@ -187,6 +201,7 @@ class hERGQC(object):
             fig.savefig('debug.png')
             plt.close(fig)
 
+        # Make a flat list of all QC criteria (pass/fail bool)
         QC = qc1 + [qc2_1, qc2_2, qc3_1, qc3_2, qc3_3] \
             + qc4 + [qc5, qc5_1, qc6, qc6_1, qc6_2]
 
@@ -199,18 +214,18 @@ class hERGQC(object):
         # Check R_seal, C_m, R_series within desired range
         if rseal < self.rsealc[0] or rseal > self.rsealc[1] \
                 or not np.isfinite(rseal):
-            print('rseal: ', rseal)
+            logging.debug('rseal: ', rseal)
             qc11 = False
         else:
             qc11 = True
         if cm < self.cmc[0] or cm > self.cmc[1] or not np.isfinite(cm):
-            print('cm: ', cm)
+            logging.debug('cm: ', cm)
             qc12 = False
         else:
             qc12 = True
         if rseries < self.rseriesc[0] or rseries > self.rseriesc[1] \
                 or not np.isfinite(rseries):
-            print('rseries: ', rseries)
+            logging.debug('rseries: ', rseries)
             qc13 = False
         else:
             qc13 = True
@@ -228,7 +243,7 @@ class hERGQC(object):
             noise = np.std(recording[:200])
             snr = (np.std(recording) / noise) ** 2
         if snr < self.snrc or not np.isfinite(snr):
-            print('snr: ', snr)
+            logging.debug('snr: ', snr)
             return False
         return True
 
@@ -252,7 +267,7 @@ class hERGQC(object):
                         np.mean([noise_1, noise_2]) * 6)
         rmsd = np.sqrt(np.mean((recording1 - recording2) ** 2))
         if rmsd > rmsdc or not (np.isfinite(rmsd) and np.isfinite(rmsdc)):
-            print('rmsd: ', rmsd, 'rmsdc: ', rmsdc)
+            logging.debug('rmsd: ', rmsd, 'rmsdc: ', rmsdc)
             return False
         return True
 
@@ -261,20 +276,20 @@ class hERGQC(object):
         # Require std/mean < x%
         if np.std(rseals) / np.mean(rseals) > self.rsealsc or not (
                 np.isfinite(np.mean(rseals)) and np.isfinite(np.std(rseals))):
-            print('d_rseal: ', np.std(rseals) / np.mean(rseals))
+            logging.debug('d_rseal: ', np.std(rseals) / np.mean(rseals))
             qc41 = False
         else:
             qc41 = True
         if np.std(cms) / np.mean(cms) > self.cmsc or not (
                 np.isfinite(np.mean(cms)) and np.isfinite(np.std(cms))):
-            print('d_cm: ', np.std(cms) / np.mean(cms))
+            logging.debug('d_cm: ', np.std(cms) / np.mean(cms))
             qc42 = False
         else:
             qc42 = True
         if np.std(rseriess) / np.mean(rseriess) > self.rseriessc or not (
                 np.isfinite(np.mean(rseriess))
                 and np.isfinite(np.std(rseriess))):
-            print('d_rseries: ', np.std(rseriess) / np.mean(rseriess))
+            logging.debug('d_rseries: ', np.std(rseriess) / np.mean(rseriess))
             qc43 = False
         else:
             qc43 = True
@@ -301,7 +316,7 @@ class hERGQC(object):
         max_diffc = self.max_diffc * recording1[i:f][wherepeak]
         if (max_diff < max_diffc) or not (np.isfinite(max_diff)
                                           and np.isfinite(max_diffc)):
-            print('max_diff: ', max_diff, 'max_diffc: ', max_diffc)
+            logging.debug('max_diff: ', max_diff, 'max_diffc: ', max_diffc)
             return False
         return True
 
@@ -330,7 +345,7 @@ class hERGQC(object):
 
         if (rmsd0_diff < rmsd0_diffc) or not (np.isfinite(rmsd0_diff)
                                               and np.isfinite(rmsd0_diffc)):
-            print('rmsd0_diff: ', rmsd0_diff, 'rmsd0c: ', rmsd0_diffc)
+            logging.debug('rmsd0_diff: ', rmsd0_diff, 'rmsd0c: ', rmsd0_diffc)
             return False
         return True
 
@@ -352,97 +367,26 @@ class hERGQC(object):
         valc = self.negative_tolc * np.std(recording1[:200])
         if (val < valc) or not (np.isfinite(val)
                                 and np.isfinite(valc)):
-            print('val: ', val, 'valc: ', valc)
+            logging.debug('val: ', val, 'valc: ', valc)
             return False
         return True
 
 
-def run_hergqc(before, after, qc_before, qc_after, n_sweeps, debug=False,
-               fcap=None, sampling_rate=5, plot_dir=None, voltage=np.array([])):
-    """ Run hERG QC using default setting
+def run_hergqc(before, after, qc_vals_before, qc_vals_after, n_sweeps,
+               debug=False, fcap=None, sampling_rate=5, plot_dir=None,
+               voltage=np.array([])):
+    """Run hERG QC using default setting
+
+    returns: A bool, list tuple. The first element is True/False when the trace
+    has/hasn't passed QC; the second is a list of bools describing which
+    criteria have been passed
 
     """
 
     QC = hERGQC(sampling_rate=sampling_rate, plot_dir=plot_dir,
                 voltage=voltage)
-    QC.set_trace(before, after, qc_before, qc_after, n_sweeps)
+    QC.set_trace(before, after, qc_vals_before, qc_vals_after, n_sweeps)
     QC.set_fcap(fcap)
     QC.set_debug(debug)
     return QC.run()
 
-
-def visual_hergqc(SELECTION, ID, QCs, saveas):
-    '''
-    Plot the number of cells selected by each of the QC critieron
-    '''
-    import matplotlib
-    matplotlib.use('Agg')
-    import matplotlib.pyplot as plt
-
-    import string
-    WELL_ID = [label + str(i).zfill(2) for label in string.ascii_uppercase[:16]
-               for i in range(1, 25)]
-
-    chip_qc = []
-    n_no_cell = 0
-    for cell in WELL_ID:
-        try:
-            selection = SELECTION[ID + cell]
-            if type(selection) is tuple:
-                # Can remove this later, my previous bug in run-qc.py
-                selection = selection[1]
-            if not any(selection[:3]) and \
-                    selection[3:] == [None] * len(selection[3:]):
-                n_no_cell += 1
-            else:
-                chip_qc.append(selection)
-        except KeyError:
-            print('No cell: ' + ID + cell)
-            n_no_cell += 1
-    chip_qc = np.asarray(chip_qc)
-    n_cells = chip_qc.shape[0]
-    assert n_cells + n_no_cell == 384
-
-    # Plot 1
-    fig = plt.figure(figsize=(6, 3.5))
-    # Add one more column for simply no cell
-    bars = np.append(n_no_cell, n_cells - np.sum(chip_qc, axis=0))
-    fig.bar(range(len(QCs) + 1), bars, color='#4271ff')
-    fig.xticks(range(len(QCs) + 1), ['no cell'] + QCs, rotation=90)
-    fig.ylabel('Filtered number', fontsize=12)
-    fig.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
-    fig.savefig(saveas + '-qc.png', bbox_inch='tight', dpi=300)
-    plt.close(fig)
-
-    # Plot matrix
-    matrix = np.zeros((len(QCs), len(QCs)))
-    for i in range(len(QCs)):
-        for j in range(len(QCs)):
-            matrix[i, j] = np.sum(np.bitwise_not(
-                chip_qc[:, i] | chip_qc[:, j]))
-    fig, ax = plt.subplots(figsize=(8, 8))
-    # vmin, vmax here is a bit arbitrary...
-    vmin = 0
-    vmax = np.max(matrix)
-    # .T is needed for the ordering i,j below
-    im = ax.matshow(matrix.T, cmap=plt.cm.Blues, vmin=vmin, vmax=vmax)
-    # do some tricks with the colorbar
-    from mpl_toolkits.axes_grid1 import make_axes_locatable
-    divider = make_axes_locatable(ax)
-    cax = divider.append_axes("right", size="5%", pad=0.05)
-    cbar = plt.colorbar(im, cax=cax)
-    # Only do integer ticks
-    from matplotlib.ticker import MaxNLocator
-    cbar.locator = MaxNLocator(integer=True)
-    cbar.ax.set_ylabel('Filtered number', fontsize=16)
-    # change the current axis back to ax
-    fig.sca(ax)
-    for i in range(matrix.shape[0]):
-        for j in range(matrix.shape[1]):
-            c = matrix[i, j]
-            ax.text(i, j, '%d' % c, va='center', ha='center')
-    fig.yticks(range(len(QCs)), QCs)
-    fig.xticks(range(len(QCs)), QCs, rotation=90)
-    fig.tight_layout(pad=0.4, w_pad=0.5, h_pad=1.0)
-    fig.savefig(saveas + '-matrix.png', bbox_inch='tight', dpi=300)
-    plt.close(fig)

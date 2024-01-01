@@ -23,15 +23,19 @@ def linear_reg(V, I):
 
 def get_QC_dict(QC, bounds={'Rseal': (10e8, 10e12), 'Cm': (1e-12, 1e-10), 'Rseries': (1e6, 2.5e7)}):
     '''
-    inputs: 
-    QC  - QC trace attribute
-    bounds - method of filtering
+    @params:
+    QC: QC trace attribute extracted from the JSON file
+    bounds: A dictionary of bound tuples, (lower, upper), for each QC variable
     '''
+
     QC_dict = {}
     for well in QC:
         for qc in QC[well]:
             if all(qc):
-                if (bounds['Rseal'][0] < qc[0] < bounds['Rseal'][1]) & (bounds['Cm'][0] < qc[1] < bounds['Cm'][1]) & (bounds['Rseries'][0] < qc[2] < bounds['Rseries'][1]):
+                if bounds['Rseal'][0] < qc[0] < bounds['Rseal'][1] and \
+                   bounds['Cm'][0] < qc[1] < bounds['Cm'][1] and \
+                   bounds['Rseries'][0] < qc[2] < bounds['Rseries'][1]:
+
                     if well in QC_dict:
                         QC_dict[well] = QC_dict[well] + [qc]
                     else:
@@ -62,8 +66,9 @@ def get_leak_corrected(trace, currents, QC_filt, ramp_bounds):
 
 
 def plot_leak_fit(currents, QC_filt, well, sweep, ramp_bounds, save=False):
-    if save is False:
-        print(f'QC_pass: {well in QC_filt.keys()}')
+    # if save is False:
+    #     print(f'QC_pass: {well in QC_filt.keys()}')
+
     V = 1000*np.array(currents['voltages'])  # mV
     I = currents[well][sweep]  # pA
     b_0, b_1 = linear_reg(V[ramp_bounds[0]:ramp_bounds[1]+1],
@@ -109,9 +114,11 @@ def plot_leak_fit(currents, QC_filt, well, sweep, ramp_bounds, save=False):
              linestyle='--', alpha=0.5, label='Ikr')
     ax4.legend()
 
-    plt.tight_layout()
+    fig.tight_layout()
     if save:
-        plt.savefig(f"{well}_{sweep}.png")
+        fig.savefig(f"{well}_{sweep}.png")
     else:
-        plt.show()
-        print(f'gleak: {b_1}, Eleak: {b_0/b_1}')
+        # plt.show()
+        # print(f'gleak: {b_1}, Eleak: {b_0/b_1}')
+        pass
+    plt.close(fig)

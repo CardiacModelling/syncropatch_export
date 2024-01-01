@@ -1,44 +1,58 @@
 from matplotlib import pyplot as plt
 import numpy as np
+import unittest
 from methods.trace import Trace as tr
-from methods import leak_correct as lc
+from methods import leak_correct
 import sys
 from pathlib import Path
-p = Path(__file__).parents[1]
-sys.path.insert(0, str(p))
+import os
 
 
-def test_get_QC_dict(QC):
-    return lc.get_QC_dict(QC)
+class TestLeakCorrect(unittest.TestCase):
+    def setUp(self):
+        test_data_dir = os.path.join('tests', 'test_data', '13112023_MW2_FF',
+                                     "staircaseramp (2)_2kHz_15.01.07")
+        json_file = "staircaseramp (2)_2kHz_15.01.07.json"
 
+        self.output_dir = os.path.join('test_output', 'test_trace_class')
 
-def test_plot_leak_fit(currents, QC_filt, well, sweep, ramp_bounds):
-    lc.plot_leak_fit(currents, QC_filt, well, sweep, ramp_bounds)
+        if not os.path.exists(self.output_dir):
+            os.makedirs(self.output_dir)
 
+        self.ramp_bounds = [1700, 2500]
+        self.test_trace = tr(test_data_dir, json_file)
 
-def test_get_leak_correct(trace, currents, QC_filt, ramp_bounds):
-    return lc.get_leak_corrected(trace, currents, QC_filt, ramp_bounds)
+        # get currents and QC from trace object
+        self.currents = self.test_trace.get_all_traces(leakcorrect=False)
+        self.currents['times'] = self.test_trace.get_times()
+        self.currents['voltages'] = self.test_trace.get_voltage()
+        self.QC = self.test_trace.get_onboard_QC_values()
+
+    def test_get_QC_dict(self):
+        QC = self.test_trace.get_onboard_QC_values()
+        return leak_correct.get_QC_dict(QC)
+
+    def test_plot_leak_fit(self):
+        well = 'A01'
+        sweep = 0
+
+        QC_filt = leak_correct.get_QC_dict(self.QC)
+
+        leak_correct.plot_leak_fit(self.currents, QC_filt, well, sweep,
+                                   self.ramp_bounds)
+
+    def test_get_leak_correct(self):
+        trace = self.test_trace
+        currents = self.currents
+        QC_filt = leak_correct.get_QC_dict(self.QC)
+
+        # test getting leak corrected data
+        leak_corrected = leak_correct.get_leak_corrected(
+            trace, currents, QC_filt, self.ramp_bounds)
+
+        return leak_correct.get_leak_corrected(trace, currents, QC_filt,
+                                               self.ramp_bounds)
 
 
 if __name__ == "__main__":
-    filepath = "test/test_files/terfenadine/"
-    json_file = "terfenadine_prot_01_12_23_12.13.23"
-    trace = tr(filepath, json_file)
-
-    # get currents and QC from trace object
-    currents = trace.all_traces(leakcorrect=False)
-    currents['times'] = trace.times()
-    currents['voltages'] = trace.voltage()
-    QC = trace.QC()
-
-    # get filtered QC dict
-    QC_filt = test_get_QC_dict(QC)
-
-    # test getting leak corrected data
-    leak_corrected = test_get_leak_correct(
-        trace, currents, QC_filt, ramp_bounds=[1700, 2500])
-    print('All tests passed')
-
-    # test plotting leak fit
-    test_plot_leak_fit(currents, QC_filt, well='D15',
-                       sweep=9, ramp_bounds=[48300, 49100])
+    pass
