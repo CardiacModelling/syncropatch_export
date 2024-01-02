@@ -31,6 +31,10 @@ class Trace:
             self.TimeScaling = TraceHeader['TimeScaling']
         except KeyError:
             self.TimeScaling = TraceHeader['TimeScalingIV']
+
+        times = self.get_times()
+        self.sampling_rate = int(1 / (times[1] - times[0]))
+
         self.MeasurementLayout = TraceHeader['MeasurementLayout']
         self.FileInformation = TraceHeader['FileInformation']
 
@@ -53,8 +57,6 @@ class Trace:
     def get_protocol_description(self):
 
         voltage_trace = self.TimeScaling['Stimulus']
-
-
 
     def get_voltage(self):
         '''

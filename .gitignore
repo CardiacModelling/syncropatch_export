@@ -1,1 +1,3 @@
 /test/test_files/
+**.pyc
+**.DS_Store

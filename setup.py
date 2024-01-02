@@ -29,7 +29,7 @@ setup(
 
     # Packages to include
     packages=find_packages(
-        include=('markov_builder', 'markov_builder.*')),
+        include=('pcpostprocess', 'pcpostprocess.*')),
 
     # Include non-python files (via MANIFEST.in)
     include_package_data=True,

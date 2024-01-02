@@ -1,17 +1,18 @@
 import numpy as np
+import os
 from matplotlib import pyplot as plt
 
 
-def linear_reg(V, I):
+def linear_reg(V, I_obs):
     # number of observations/points
     n = np.size(V)
 
     # mean of V and I vector
     m_V = np.mean(V)
-    m_I = np.mean(I)
+    m_I = np.mean(I_obs)
 
     # calculating cross-deviation and deviation about V
-    SS_VI = np.sum(I*V) - n*m_I*m_V
+    SS_VI = np.sum(I_obs*V) - n*m_I*m_V
     SS_VV = np.sum(V*V) - n*m_V*m_V
 
     # calculating regression coefficients
@@ -21,7 +22,8 @@ def linear_reg(V, I):
     return (b_0, b_1)
 
 
-def get_QC_dict(QC, bounds={'Rseal': (10e8, 10e12), 'Cm': (1e-12, 1e-10), 'Rseries': (1e6, 2.5e7)}):
+def get_QC_dict(QC, bounds={'Rseal': (10e8, 10e12), 'Cm': (1e-12, 1e-10),
+                            'Rseries': (1e6, 2.5e7)}):
     '''
     @params:
     QC: QC trace attribute extracted from the JSON file
@@ -65,60 +67,58 @@ def get_leak_corrected(trace, currents, QC_filt, ramp_bounds):
     return leak_corrected
 
 
-def plot_leak_fit(currents, QC_filt, well, sweep, ramp_bounds, save=False):
-    # if save is False:
-    #     print(f'QC_pass: {well in QC_filt.keys()}')
+def fit_leak(data, well, sweep, ramp_bounds, plot=False, label='',
+             output_dir=''):
 
-    V = 1000*np.array(currents['voltages'])  # mV
-    I = currents[well][sweep]  # pA
+    V = 1e3*np.array(data['voltages'])  # mV
+    I_obs = data[well][sweep]  # pA
     b_0, b_1 = linear_reg(V[ramp_bounds[0]:ramp_bounds[1]+1],
-                          I[ramp_bounds[0]:ramp_bounds[1]+1])
+                          I_obs[ramp_bounds[0]:ramp_bounds[1]+1])
     I_leak = b_1*V + b_0
 
-    # fit to leak ramp
-    fig, ((ax1, ax3), (ax2, ax4)) = plt.subplots(2, 2, figsize=(7.5, 6))
+    if plot:
+        # fit to leak ramp
+        fig, ((ax1, ax3), (ax2, ax4)) = plt.subplots(2, 2, figsize=(7.5, 6))
 
-    ax1.set_title('current vs time')
-    ax1.set_xlabel('time (s)')
-    ax1.set_ylabel('current (pA)')
-    ax1.plot(currents['times'], I)
-    ax1.axvline(ramp_bounds[0]*0.0005, linestyle='--', color='k', alpha=0.5)
-    ax1.axvline(ramp_bounds[1]*0.0005, linestyle='--', color='k', alpha=0.5)
-    ax1.set_xlim(left=ramp_bounds[0]*0.0005 - 1,
-                 right=ramp_bounds[1]*0.0005 + 1)
+        ax1.set_title('current vs time')
+        ax1.set_xlabel('time (s)')
+        ax1.set_ylabel('current (pA)')
+        ax1.plot(data['times'], I_obs)
+        ax1.axvline(ramp_bounds[0]*0.0005, linestyle='--', color='k', alpha=0.5)
+        ax1.axvline(ramp_bounds[1]*0.0005, linestyle='--', color='k', alpha=0.5)
+        ax1.set_xlim(left=ramp_bounds[0]*0.0005 - 1,
+                    right=ramp_bounds[1]*0.0005 + 1)
 
-    ax2.set_title('voltage vs time')
-    ax2.set_xlabel('time (s)')
-    ax2.set_ylabel('voltage (mV)')
-    ax2.plot(currents['times'], V)
-    ax2.axvline(ramp_bounds[0]*0.0005, linestyle='--', color='k', alpha=0.5)
-    ax2.axvline(ramp_bounds[1]*0.0005, linestyle='--', color='k', alpha=0.5)
-    ax2.set_xlim(left=ramp_bounds[0]*0.0005 - 1,
-                 right=ramp_bounds[1]*0.0005 + 1)
+        ax2.set_title('voltage vs time')
+        ax2.set_xlabel('time (s)')
+        ax2.set_ylabel('voltage (mV)')
+        ax2.plot(data['times'], V)
+        ax2.axvline(ramp_bounds[0]*0.0005, linestyle='--', color='k', alpha=0.5)
+        ax2.axvline(ramp_bounds[1]*0.0005, linestyle='--', color='k', alpha=0.5)
+        ax2.set_xlim(left=ramp_bounds[0]*0.0005 - 1,
+                     right=ramp_bounds[1]*0.0005 + 1)
 
-    ax3.set_title('current vs voltage')
-    ax3.set_xlabel('voltage (mV)')
-    ax3.set_ylabel('current (pA)')
-    ax3.plot(V[ramp_bounds[0]:ramp_bounds[1]+1],
-             I[ramp_bounds[0]:ramp_bounds[1]+1], 'x')
-    ax3.plot(V[ramp_bounds[0]:ramp_bounds[1]+1],
-             I_leak[ramp_bounds[0]:ramp_bounds[1]+1], '--')
+        ax3.set_title('current vs voltage')
+        ax3.set_xlabel('voltage (mV)')
+        ax3.set_ylabel('current (pA)')
+        ax3.plot(V[ramp_bounds[0]:ramp_bounds[1]+1],
+                 I_obs[ramp_bounds[0]:ramp_bounds[1]+1], 'x')
+        ax3.plot(V[ramp_bounds[0]:ramp_bounds[1]+1],
+                 I_leak[ramp_bounds[0]:ramp_bounds[1]+1], '--')
 
-    ax4.set_title(
-        f'current vs. time (gleak: {np.round(b_1,1)}, Eleak: {np.round(b_0/b_1,1)})')
-    ax4.set_xlabel('time (s)')
-    ax4.set_ylabel('current (pA)')
-    ax4.plot(currents['times'], I, label='I_obs')
-    ax4.plot(currents['times'], I_leak, linestyle='--', label='I_leak')
-    ax4.plot(currents['times'], I - I_leak,
-             linestyle='--', alpha=0.5, label='Ikr')
-    ax4.legend()
+        ax4.set_title(
+            f'current vs. time (gleak: {np.round(b_1,1)}, Eleak: {np.round(b_0/b_1,1)})')
+        ax4.set_xlabel('time (s)')
+        ax4.set_ylabel('current (pA)')
+        ax4.plot(data['times'], I_obs, label='I_obs')
+        ax4.plot(data['times'], I_leak, linestyle='--', label='I_leak')
+        ax4.plot(data['times'], I_obs - I_leak,
+                 linestyle='--', alpha=0.5, label='Ikr')
+        ax4.legend()
 
-    fig.tight_layout()
-    if save:
-        fig.savefig(f"{well}_{sweep}.png")
-    else:
-        # plt.show()
-        # print(f'gleak: {b_1}, Eleak: {b_0/b_1}')
-        pass
-    plt.close(fig)
+        fig.tight_layout()
+        fig.savefig(os.path.join(
+            output_dir, f"{label}_{well}_{sweep}.png"))
+        plt.close(fig)
+
+    return (b_0, b_1), I_leak
