@@ -286,7 +286,9 @@ def extract_protocol(readname, savename, time_strs, selected_wells):
                                          voltage.flatten())).T,
                               columns=['time', 'voltage'])
 
-    voltage_df.to_csv(os.path.join(f"{saveID}-{savename}-voltages.csv"))
+    voltage_df.to_csv(os.path.join(savedir,
+                                   f"{saveID}-{savename}-voltages.csv"))
+
     np.savetxt(os.path.join(savedir, f"{saveID}-{savename}-times.txt"),
                times_before)
 
