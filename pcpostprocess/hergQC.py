@@ -98,7 +98,6 @@ class hERGQC(object):
                           'qc6.subtracted', 'qc6.1.subtracted',
                           'qc6.2.subtracted']
 
-
     def get_qc_names(self):
         return self.QCnames
 

@@ -15,11 +15,11 @@ class TestHergQC(unittest.TestCase):
                                 'staircaseramp (2)_2kHz_15.01.07')
 
         self.all_wells = [
-            lab + str(i).zfill(2) for lab in string.ascii_uppercase[:16]\
+            lab + str(i).zfill(2) for lab in string.ascii_uppercase[:16]
             for i in range(1, 25)]
 
         filepath2 = os.path.join('tests', 'test_data', '13112023_MW2_FF',
-                                'staircaseramp (2)_2kHz_15.11.33')
+                                 'staircaseramp (2)_2kHz_15.11.33')
 
         json_file = "staircaseramp (2)_2kHz_15.01.07"
         json_file2 = "staircaseramp (2)_2kHz_15.11.33"

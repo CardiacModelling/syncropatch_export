@@ -40,7 +40,7 @@ class Trace:
         self.FileInformation = TraceHeader['FileInformation']
 
         self.WELL_ID = [
-            [lab + str(i).zfill(2) for lab in string.ascii_uppercase[:16]]\
+            [lab + str(i).zfill(2) for lab in string.ascii_uppercase[:16]]
             for i in range(1, 25)]
 
         self.NofSweeps = self.MeasurementLayout['NofSweeps']

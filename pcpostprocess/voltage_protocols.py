@@ -15,10 +15,10 @@ class VoltageProtocol():
 
         windows = np.argwhere(diff2 > threshold).flatten()
         window_locs = np.unique(windows)
-        window_locs = np.array([val for val in window_locs if val + 1\
+        window_locs = np.array([val for val in window_locs if val + 1
                                 not in window_locs]) + 1
 
-        windows = zip([0] + list(window_locs), list(window_locs) \
+        windows = zip([0] + list(window_locs), list(window_locs)
                       + [len(voltage_trace) - 1])
 
         lst = []

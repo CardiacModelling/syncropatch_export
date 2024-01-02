@@ -95,7 +95,7 @@ def fit_linear_leak(trace: Trace, well, sweep, ramp_bounds, plot=False,
         ax1.axvline(ramp_bounds[0]*0.0005, linestyle='--', color='k', alpha=0.5)
         ax1.axvline(ramp_bounds[1]*0.0005, linestyle='--', color='k', alpha=0.5)
         ax1.set_xlim(left=ramp_bounds[0]*0.0005 - 1,
-                    right=ramp_bounds[1]*0.0005 + 1)
+                     right=ramp_bounds[1]*0.0005 + 1)
 
         ax2.set_title('voltage vs time')
         ax2.set_xlabel('time (s)')
