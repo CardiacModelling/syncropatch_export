@@ -1,10 +1,6 @@
-from matplotlib import pyplot as plt
-import numpy as np
 import unittest
-from methods.trace import Trace as tr
-from methods import leak_correct
-import sys
-from pathlib import Path
+from pcpostprocess.trace import Trace as tr
+from pcpostprocess import leak_correct
 import os
 
 
@@ -36,10 +32,9 @@ class TestLeakCorrect(unittest.TestCase):
         well = 'A01'
         sweep = 0
 
-        QC_filt = leak_correct.get_QC_dict(self.QC)
-
-        leak_correct.plot_leak_fit(self.currents, QC_filt, well, sweep,
-                                   self.ramp_bounds)
+        leak_correct.fit_linear_leak(self.test_trace, well, sweep,
+                                     self.ramp_bounds, plot=True,
+                                     output_dir=self.output_dir)
 
     def test_get_leak_correct(self):
         trace = self.test_trace
@@ -47,7 +42,7 @@ class TestLeakCorrect(unittest.TestCase):
         QC_filt = leak_correct.get_QC_dict(self.QC)
 
         # test getting leak corrected data
-        leak_corrected = leak_correct.get_leak_corrected(
+        _ = leak_correct.get_leak_corrected(
             trace, currents, QC_filt, self.ramp_bounds)
 
         return leak_correct.get_leak_corrected(trace, currents, QC_filt,

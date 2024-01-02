@@ -2,6 +2,7 @@ import json
 import os
 import numpy as np
 import string
+from .voltage_protocols import VoltageProtocol
 
 
 class Trace:
@@ -54,15 +55,16 @@ class Trace:
         self.FileList = self.FileInformation['FileList']
         self.FileList.sort()
 
-    def get_protocol_description(self):
-
-        voltage_trace = self.TimeScaling['Stimulus']
+    def get_protocol_description(self, holding_potential=-80.0):
+        voltage = self.get_voltage()
+        times = self.get_times()
+        return VoltageProtocol(voltage, times, holding_potential)
 
     def get_voltage(self):
         '''
         Returns the voltage stimulus from Nanion .json file
         '''
-        return self.TimeScaling['Stimulus']
+        return np.array(self.TimeScaling['Stimulus']).astype(np.float64)
 
     def get_times(self):
         '''
@@ -240,13 +242,13 @@ class Trace:
                 OUT[ijWell] = []
 
         if sweeps is None:
-            sweeps = range(self.NofSweeps)
+            sweeps = list(range(RSeal.shape[0]))
 
         for k in sweeps:
             for i in range(self.WP_nCols):
                 for j in range(self.WP_nRows):
-                    OUT[self.WELL_ID[i][j]].append((RSeal[k][i][j],
-                                                    Capacitance[k][i][j],
-                                                    Rseries[k][i][j]))
+                    OUT[self.WELL_ID[i][j]].append((RSeal[k, i, j],
+                                                    Capacitance[k, i, j],
+                                                    Rseries[k, i, j]))
 
         return OUT

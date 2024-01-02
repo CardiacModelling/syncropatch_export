@@ -1,9 +1,10 @@
 import numpy as np
 import unittest
+import logging
 import os
 
-from methods.trace import Trace
-from methods.hergQC import hERGQC
+from pcpostprocess.trace import Trace
+from pcpostprocess.hergQC import hERGQC
 
 import string
 
@@ -80,7 +81,7 @@ class TestHergQC(unittest.TestCase):
                                         qc_vals_after_well,
                                         n_sweeps=2)
 
-            print(well, passed)
+            logging.debug(well, passed)
             res[well] = passed
 
         self.assertTrue(res['A01'])
