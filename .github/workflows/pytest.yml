@@ -22,7 +22,7 @@ jobs:
         python -m pip install .[test]
     - name: Extract test data
       run: |
-        cd tests && tar xzvf test_data.tar.xz && cd ../
+        cd tests && tar xzf test_data.tar.xz && cd ../
     - name: Test with pytest
       run: |
         python -m pytest --cov --cov-config=.coveragerc
