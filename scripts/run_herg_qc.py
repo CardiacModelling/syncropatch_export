@@ -7,20 +7,16 @@ import string
 import sys
 
 import matplotlib.pyplot as plt
-from matplotlib.gridspec import GridSpec
-
 import numpy as np
-
 import pandas as pd
+import regex as re
+from matplotlib.gridspec import GridSpec
 
 from pcpostprocess.hergQC import hERGQC
 from pcpostprocess.infer_reversal import infer_reversal_potential
 from pcpostprocess.leak_correct import fit_linear_leak
 from pcpostprocess.trace import Trace
 from pcpostprocess.voltage_protocols import VoltageProtocol
-
-import regex as re
-
 
 global wells
 wells = [row + str(i).zfill(2) for row in string.ascii_uppercase[:16] for i in
