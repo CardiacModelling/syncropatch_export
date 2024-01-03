@@ -3,6 +3,7 @@ import sys
 import unittest
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 from pcpostprocess.trace import Trace as tr
