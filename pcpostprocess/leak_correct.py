@@ -20,7 +20,8 @@ def linear_reg(V, I_obs):
     b_1 = SS_VI / SS_VV
     b_0 = m_I - b_1*m_V
 
-    return (b_0, b_1)
+    # return intercept, gradient
+    return b_0, b_1
 
 
 def get_QC_dict(QC, bounds={'Rseal': (10e8, 10e12), 'Cm': (1e-12, 1e-10),
@@ -74,7 +75,12 @@ def fit_linear_leak(trace: Trace, well, sweep, ramp_bounds, plot=False,
     voltage = trace.get_voltage()
     times = trace.get_times()
 
-    current = trace.get_trace_sweeps([sweep])[well][0]
+    current = trace.get_trace_sweeps([sweep])[well]
+
+    if len(current) == 0:
+        return (np.nan, np.nan), np.empty(times.shape)
+
+    current = current.flatten()
 
     # Convert to mV for convinience
     V = voltage * 1e3
@@ -125,8 +131,13 @@ def fit_linear_leak(trace: Trace, well, sweep, ramp_bounds, plot=False,
         ax4.legend()
 
         fig.tight_layout()
-        fig.savefig(os.path.join(
-            output_dir, f"{label}_{well}_{sweep}.png"))
+        fname = f"{label}_{well}_sweep{sweep}" if label != '' \
+            else f"{well}_sweep{sweep}"
+
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
+        fig.savefig(os.path.join(output_dir, fname))
         plt.close(fig)
 
     return (b_0, b_1), I_leak

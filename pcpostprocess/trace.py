@@ -156,16 +156,19 @@ class Trace:
             OUT_idx_i.append(ReadOffset)
         return OUT_file_idx, OUT_idx_i
 
-    def get_trace_sweeps(self, sweeps, leakcorrect=False):
+    def get_trace_sweeps(self, sweeps=None, leakcorrect=False):
         '''
         Returns a subset of sweeps defined by the input 'sweeps'
         '''
 
         # initialise output
-        OUT = {}
+        out_dict = {}
         for iCol in self.WELL_ID:
             for ijWell in iCol:
-                OUT[ijWell] = []
+                out_dict[ijWell] = []
+
+        if sweeps is None:
+            sweeps = list(range(self.NofSweeps))
 
         # check `getsweep` input is something sensible
         if len(sweeps) > self.NofSweeps:
@@ -214,12 +217,16 @@ class Trace:
                         + leakoffset * self.NofSamples
                     end = j * self.Leakdata * self.NofSamples \
                         + (leakoffset + 1) * self.NofSamples
-                    OUT[ijWell].append(iColTraces[start:end])
+                    out_dict[ijWell].append(np.array(iColTraces[start:end]))
 
                 # update idx_i
                 idx_i = idx_f
             del trace
-        return OUT
+
+        for key in out_dict:
+            out_dict[key] = np.vstack(out_dict[key])
+
+        return out_dict
 
     def get_onboard_QC_values(self, sweeps=None):
         '''Read quality control values Rseal, Cslow (Cm), and Rseries from a Nanion .json file
@@ -236,10 +243,10 @@ class Trace:
         Rseries = np.array(self.meta['QCData']['Rseries'])
 
         # initialise output
-        OUT = {}
+        out_dict = {}
         for iCol in self.WELL_ID:
             for ijWell in iCol:
-                OUT[ijWell] = []
+                out_dict[ijWell] = []
 
         if sweeps is None:
             sweeps = list(range(RSeal.shape[0]))
@@ -247,8 +254,8 @@ class Trace:
         for k in sweeps:
             for i in range(self.WP_nCols):
                 for j in range(self.WP_nRows):
-                    OUT[self.WELL_ID[i][j]].append((RSeal[k, i, j],
+                    out_dict[self.WELL_ID[i][j]].append((RSeal[k, i, j],
                                                     Capacitance[k, i, j],
                                                     Rseries[k, i, j]))
 
-        return OUT
+        return out_dict
