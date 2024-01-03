@@ -4,9 +4,8 @@ import unittest
 from pathlib import Path
 
 import numpy as np
-from matplotlib import pyplot as plt
 
-from methods.trace import Trace as tr
+from pcpostprocess.trace import Trace as tr
 
 p = Path(__file__).parents[1]
 sys.path.insert(0, str(p))
