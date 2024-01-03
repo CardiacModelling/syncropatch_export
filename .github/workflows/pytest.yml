@@ -22,6 +22,7 @@ jobs:
         python -m pip install .[test]
     - name: Extract test data
       run: |
+        git lfs pull
         cd tests && tar xvf test_data.tar.xz && cd ../
     - name: Test with pytest
       run: |
