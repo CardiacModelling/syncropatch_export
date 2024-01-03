@@ -1,12 +1,12 @@
-import numpy as np
-import unittest
 import logging
 import os
-
-from pcpostprocess.trace import Trace
-from pcpostprocess.hergQC import hERGQC
-
 import string
+import unittest
+
+import numpy as np
+
+from pcpostprocess.hergQC import hERGQC
+from pcpostprocess.trace import Trace
 
 
 class TestHergQC(unittest.TestCase):

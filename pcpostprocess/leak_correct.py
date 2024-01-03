@@ -1,6 +1,8 @@
-import numpy as np
 import os
+
+import numpy as np
 from matplotlib import pyplot as plt
+
 from .trace import Trace
 
 

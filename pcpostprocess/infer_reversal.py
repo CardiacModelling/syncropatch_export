@@ -1,11 +1,11 @@
-import numpy as np
-import os
 import logging
+import os
+
 import matplotlib.pyplot as plt
+import numpy as np
+import numpy.polynomial.polynomial as poly
 
 from .trace import Trace
-
-import numpy.polynomial.polynomial as poly
 
 
 def infer_reversal_potential(trace: Trace, sweep: int, well: str, ax=None,

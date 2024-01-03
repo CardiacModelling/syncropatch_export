@@ -1,7 +1,8 @@
-import unittest
-from pcpostprocess.trace import Trace as tr
-from pcpostprocess import leak_correct
 import os
+import unittest
+
+from pcpostprocess import leak_correct
+from pcpostprocess.trace import Trace as tr
 
 
 class TestLeakCorrect(unittest.TestCase):

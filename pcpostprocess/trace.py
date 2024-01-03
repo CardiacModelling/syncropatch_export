@@ -1,7 +1,9 @@
 import json
 import os
-import numpy as np
 import string
+
+import numpy as np
+
 from .voltage_protocols import VoltageProtocol
 
 
@@ -255,7 +257,7 @@ class Trace:
             for i in range(self.WP_nCols):
                 for j in range(self.WP_nRows):
                     out_dict[self.WELL_ID[i][j]].append((RSeal[k, i, j],
-                                                    Capacitance[k, i, j],
-                                                    Rseries[k, i, j]))
+                                                         Capacitance[k, i, j],
+                                                         Rseries[k, i, j]))
 
         return out_dict

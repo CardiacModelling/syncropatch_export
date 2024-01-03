@@ -1,22 +1,22 @@
-import numpy as np
 import argparse
-import logging
-import os
-import sys
 import importlib.util
+import logging
+import multiprocessing
+import os
+import string
+import sys
+
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import regex as re
-import multiprocessing
-import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 
-from pcpostprocess.trace import Trace
 from pcpostprocess.hergQC import hERGQC
-from pcpostprocess.leak_correct import fit_linear_leak
-from pcpostprocess.voltage_protocols import VoltageProtocol
 from pcpostprocess.infer_reversal import infer_reversal_potential
-
-import string
+from pcpostprocess.leak_correct import fit_linear_leak
+from pcpostprocess.trace import Trace
+from pcpostprocess.voltage_protocols import VoltageProtocol
 
 global wells
 wells = [row + str(i).zfill(2) for row in string.ascii_uppercase[:16] for i in
@@ -163,7 +163,7 @@ def main():
                               savedir, 'QC-%s.csv' % saveID))
 
     # Write data to JSON file
-    qc_df.to_json(os.path.join(args.output_dir,savedir, 'QC-%s.json' % saveID),
+    qc_df.to_json(os.path.join(args.output_dir, savedir, 'QC-%s.json' % saveID),
                   orient='records')
 
     # Overwrite old files
@@ -241,7 +241,7 @@ def main():
     for well in extract_df.well.unique():
         sub_df = extract_df[extract_df.well == well]
         passed_qc3_bookend = \
-                   np.all(qc_df.set_index(['well']).loc[well]['qc3.bookend'])
+            np.all(qc_df.set_index(['well']).loc[well]['qc3.bookend'])
         passed_QC_Erev_all = np.all(sub_df['QC.Erev'].values)
         passed_QC6_all = np.all(sub_df.QC6.values)
 
@@ -400,7 +400,7 @@ def extract_protocol(readname, savename, time_strs, selected_wells):
                                                          output_dir=out_dir)
 
             out_dir = os.path.join(savedir,
-                                     f"{saveID}-{savename}-leak_fit-after")
+                                   f"{saveID}-{savename}-leak_fit-after")
             # Convert linear regression parameters into conductance and reversal
             row_dict['gleak_before'] = before_params[1]
             row_dict['E_leak_before'] = -before_params[0] / before_params[1]
@@ -418,7 +418,7 @@ def extract_protocol(readname, savename, time_strs, selected_wells):
             subtracted_trace = before_current[sweep, :] - before_leak\
                 - (after_current[sweep, :] - after_leak)
             out_fname = os.path.join(savedir,
-                                    f"{saveID}-{savename}-{well}-sweep{sweep}-subtracted.csv")
+                                     f"{saveID}-{savename}-{well}-sweep{sweep}-subtracted.csv")
             after_corrected = after_current[sweep, :] - after_leak
             before_corrected = before_current[sweep, :] - before_leak
 
@@ -432,14 +432,14 @@ def extract_protocol(readname, savename, time_strs, selected_wells):
                                                    plot=True,
                                                    output_path=os.path.join(reversal_plot_dir,
                                                                             f"{well}_{savename}_sweep{sweep}_after"),
-                                                   known_Erev=args.Erev )
+                                                   known_Erev=args.Erev)
 
             E_rev = infer_reversal_potential(before_trace, sweep, well,
                                              plot=True,
                                              output_path=os.path.join(reversal_plot_dir,
                                                                       f"{well}_{savename}_sweep{sweep}_after"),
                                              known_Erev=args.Erev,
-                                             current=subtracted_trace )
+                                             current=subtracted_trace)
 
             row_dict['R_leftover'] =\
                 np.sqrt(np.sum(after_corrected**2)/(np.sum(before_corrected**2)))
@@ -484,12 +484,12 @@ def extract_protocol(readname, savename, time_strs, selected_wells):
     nsweeps = before_trace.NofSweeps
 
     axs = setup_subtraction_grid(fig, nsweeps)
-    protocol_axs, before_axs, after_axs,\
-        corrected_axs, subtracted_ax,\
+    protocol_axs, before_axs, after_axs, \
+        corrected_axs, subtracted_ax, \
         long_protocol_ax = axs
 
     axs = protocol_axs + before_axs + after_axs + corrected_axs + \
-                   [subtracted_ax, long_protocol_ax]
+        [subtracted_ax, long_protocol_ax]
 
     times = before_trace.get_times()
     voltages = before_trace.get_voltage()
@@ -515,8 +515,8 @@ def extract_protocol(readname, savename, time_strs, selected_wells):
         for ax in corrected_axs:
             for sweep in range(nsweeps):
                 before_params, before_leak = fit_linear_leak(before_trace,
-                                                            well, sweep,
-                                                            ramp_bounds)
+                                                             well, sweep,
+                                                             ramp_bounds)
                 corrected_current = before_current[sweep, :] - before_leak
                 ax.plot(times, corrected_current, label=f"sweep {sweep}")
                 ax.set_xlabel('time (ms)')
@@ -709,9 +709,9 @@ def qc3_bookend(readname, savename, time_strs):
                             "{saveID}-{savename}-plot")
 
     filepath_first = os.path.join(args.data_directory,
-                                   f"{readname}_{time_strs[0]}")
+                                  f"{readname}_{time_strs[0]}")
     filepath_last = os.path.join(args.data_directory,
-                                  f"{readname}_{time_strs[3]}")
+                                 f"{readname}_{time_strs[3]}")
     json_file_first = f"{readname}_{time_strs[0]}"
     json_file_last = f"{readname}_{time_strs[3]}"
 
