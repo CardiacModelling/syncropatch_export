@@ -1,7 +1,8 @@
 import os
 
-import numpy as np
 from matplotlib import pyplot as plt
+
+import numpy as np
 
 from .trace import Trace
 
@@ -63,11 +64,12 @@ def get_leak_corrected(trace, currents, QC_filt, ramp_bounds):
             if well in QC_filt.keys():
                 leak_corrected[well] = {}
                 for sweep in range(trace.NofSweeps):
-                    I = currents[well][sweep]  # pA
+                    I_obs = currents[well][sweep]  # pA
                     b_0, b_1 = linear_reg(
-                        V[ramp_bounds[0]:ramp_bounds[1]+1], I[ramp_bounds[0]:ramp_bounds[1]+1])
+                        V[ramp_bounds[0]:ramp_bounds[1]+1],
+                        I_obs[ramp_bounds[0]:ramp_bounds[1]+1])
                     I_leak = b_1*V + b_0
-                    leak_corrected[well][sweep] = I - I_leak
+                    leak_corrected[well][sweep] = I_obs - I_leak
     return leak_corrected
 
 

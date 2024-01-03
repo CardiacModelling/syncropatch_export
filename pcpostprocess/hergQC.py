@@ -2,7 +2,9 @@ import logging
 import os
 
 import matplotlib.pyplot as plt
+
 import numpy as np
+
 import scipy.stats
 
 
@@ -17,25 +19,7 @@ class hERGQC(object):
 
     def __init__(self, sampling_rate=5, plot_dir=None, voltage=np.array([]),
                  n_sweeps=None):
-        '''
-        #
-        # \item[\textbf{qc1.rseal}] check rseal within [1e8, 1e12] \gary{Units on all these...}
-        # \item[\textbf{qc1.cm}] check cm within [1e-12, 1e-10]
-        # \item[\textbf{qc1.rseries}] check rseries within [1e6, 2.5e7]
-        # \item[\textbf{qc2.raw}] check raw trace recording SNR > 5 (SNR defined as std(trace) / std(noise)
-        # \item[\textbf{qc2.subtracted}] check subtracted trace SNR > 5
-        # \item[\textbf{qc3.raw}] check 2 sweeps of raw trace recording are similar by comparing the RMSD of the two sweeps < mean(RMSD to zero of the two sweeps) * 0.2
-        # \item[\textbf{qc3.E4031}] check 2 sweeps of E4031 trace recording are similar (same comparison as qc3.raw)
-        # \item[\textbf{qc3.subtracted}] check 2 sweeps of subtracted trace recording are similar (same comparison as qc3.raw)
-        # \item[\textbf{qc4...}] check rseal, cm, rseries, respectively, before and after E4031 change (defined as std/mean) < 0.5
-        # \item[\textbf{qc5.staircase}] check current during which hERG current could peak change by at least 75\% of the raw trace after E4031 addition
-        # \item[\textbf{qc5.1.staircase}] check RMSD to zero (RMSD\_0) of staircase protocol change by at least 50\% of the raw trace after E4031 addition
-        # \item[\textbf{qc6.subtracted}]: check the first big step up to +40 mV in the subtracted trace is bigger than -2 * estimated noise level
-        # \item[\textbf{qc6.1.subtracted}] same as qc6.subtracted and applied at the first +40 mV during the staircase
-        # \item[\textbf{qc6.2.subtracted}] same as qc6.subtracted and applied at the second +40 mV during the staircase
-        #
-        # Total number of QCs
-        '''
+        # TODO docstring
 
         if plot_dir is not None:
             self.plot_dir = plot_dir
