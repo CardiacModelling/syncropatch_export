@@ -73,7 +73,7 @@ def get_leak_corrected(trace, currents, QC_filt, ramp_bounds):
 
 
 def fit_linear_leak(trace: Trace, well, sweep, ramp_bounds, plot=False,
-                    label='', output_dir=''):
+                    label='', output_dir=None):
 
     voltage = trace.get_voltage()
     times = trace.get_times()
@@ -86,7 +86,7 @@ def fit_linear_leak(trace: Trace, well, sweep, ramp_bounds, plot=False,
     current = current.flatten()
 
     # Convert to mV for convinience
-    V = voltage * 1e3
+    V = voltage
 
     I_obs = current  # pA
     b_0, b_1 = linear_reg(V[ramp_bounds[0]:ramp_bounds[1]+1],
@@ -140,7 +140,8 @@ def fit_linear_leak(trace: Trace, well, sweep, ramp_bounds, plot=False,
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
 
-        fig.savefig(os.path.join(output_dir, fname))
+        if output_dir:
+            fig.savefig(os.path.join(output_dir, fname))
         plt.close(fig)
 
     return (b_0, b_1), I_leak

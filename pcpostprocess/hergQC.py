@@ -25,10 +25,10 @@ class hERGQC(object):
         self._n_qc = 16
 
         self.output_dir = 'output'
-        # Convert to mV for convinience
-        self.voltage = np.array(voltage) * 1e3
+        self.voltage = np.array(voltage)
 
-        # Define all threshold here
+        # Define all thresholds
+
         # qc1
         self.rsealc = [1e8, 1e12]  # in Ohm # TODO double check values
         self.cmc = [1e-12, 1e-10]  # in F
@@ -161,11 +161,14 @@ class hERGQC(object):
 
         # Ensure that the windows are correct by checking the voltage trace
         assert np.all(
-            np.abs(self.voltage[self.qc6_win[0]: self.qc6_win[1]] - 40.0)) < 1e-8
+            np.abs(self.voltage[self.qc6_win[0]: self.qc6_win[1]] - 40.0))\
+            < 1e-8
         assert np.all(
-            np.abs(self.voltage[self.qc6_1_win[0]: self.qc6_1_win[1]] - 40.0)) < 1e-8
+            np.abs(self.voltage[self.qc6_1_win[0]: self.qc6_1_win[1]] - 40.0))\
+            < 1e-8
         assert np.all(
-            np.abs(self.voltage[self.qc6_2_win[0]: self.qc6_2_win[1]] - 40.0)) < 1e-8
+            np.abs(self.voltage[self.qc6_2_win[0]: self.qc6_2_win[1]] - 40.0))\
+            < 1e-8
 
         qc6 = self.qc6((before[0, :] - after[0, :]),
                        self.qc6_win, label='0')

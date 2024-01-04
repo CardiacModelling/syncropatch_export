@@ -34,7 +34,7 @@ def main():
     parser.add_argument('--export_failed', action='store_true')
     parser.add_argument('--selection_file')
     parser.add_argument('--subtracted_only', action='store_true')
-    parser.add_argument('--figsize', nargs=2, type=int)
+    parser.add_argument('--figsize', nargs=2, type=int, default=[12, 9])
     parser.add_argument('--debug', action='store_true')
     parser.add_argument('--Erev', default=-90.71, type=float)
 
@@ -272,8 +272,8 @@ def extract_protocol(readname, savename, time_strs, selected_wells):
 
     row_dict = {}
 
-    plot_dir = os.path.join(args.output_dir, savedir,
-                            "{saveID}-{savename}-plot")
+    plot_dir = os.path.join(savedir,
+                            f"{saveID}-{savename}-plot")
 
     if not os.path.isdir(plot_dir):
         os.makedirs(plot_dir)
@@ -291,9 +291,10 @@ def extract_protocol(readname, savename, time_strs, selected_wells):
     after_trace = Trace(filepath_after,
                         json_file_after)
 
-    voltage_protocol = before_trace.get_protocol_description()
+    voltage_protocol = before_trace.get_voltage_protocol()
     t = before_trace.get_times()
     tstart, tend = voltage_protocol.get_ramps()[0][:2]
+
     ramp_bounds = [np.argmax(t > tstart), np.argmax(t > tend)]
 
     nsweeps_before = before_trace.NofSweeps = 2
@@ -453,7 +454,7 @@ def extract_protocol(readname, savename, time_strs, selected_wells):
             row_dict['QC.Erev'] = E_rev < -50 and E_rev > -120
 
             # Get indices of first step up to +40mV
-            protocol_description = before_trace.get_protocol_description()
+            protocol_description = before_trace.get_voltage_protocol()
             steps_40 = [step for step in protocol_description.get_all_sections()
                         if step[2] == 40.0 and step[3] == 40.0]
             # print(protocol_description.get_all_sections())
@@ -475,28 +476,28 @@ def extract_protocol(readname, savename, time_strs, selected_wells):
                             n_sweeps=before_trace.NofSweeps)
 
             row_dict['QC6'] = hergqc.qc6(subtracted_trace,
-                                         win=[istart, iend])
+                                         win=[istart, iend],
+                                         label='0')
 
             np.savetxt(out_fname, subtracted_trace.flatten())
             rows.append(row_dict)
 
     extract_df = pd.DataFrame.from_dict(rows)
-    print(extract_df)
 
     nsweeps = before_trace.NofSweeps
-
-    axs = setup_subtraction_grid(fig, nsweeps)
-    protocol_axs, before_axs, after_axs, \
-        corrected_axs, subtracted_ax, \
-        long_protocol_ax = axs
-
-    axs = protocol_axs + before_axs + after_axs + corrected_axs + \
-        [subtracted_ax, long_protocol_ax]
-
     times = before_trace.get_times()
     voltages = before_trace.get_voltage()
 
     for well in selected_wells:
+
+        axs = setup_subtraction_grid(fig, nsweeps)
+        protocol_axs, before_axs, after_axs, \
+            corrected_axs, subtracted_ax, \
+            long_protocol_ax = axs
+
+        axs = protocol_axs + before_axs + after_axs + corrected_axs + \
+            [subtracted_ax, long_protocol_ax]
+
         for ax in protocol_axs:
             ax.plot(times, voltages, color='black')
             ax.set_xlabel('time (ms)')
@@ -545,8 +546,7 @@ def extract_protocol(readname, savename, time_strs, selected_wells):
 
         fig.savefig(os.path.join(savedir,
                                  f"{saveID}-{savename}-{well}-sweep{sweep}-subtraction"))
-        for ax in axs:
-            ax.cla()
+        fig.clf()
 
     plt.close(fig)
     return extract_df
@@ -574,11 +574,11 @@ def run_qc_for_protocol(readname, savename, time_strs):
     assert before_trace.sampling_rate == after_trace.sampling_rate
 
     # Convert to s
-    sampling_rate = before_trace.sampling_rate * 1e-3
+    sampling_rate = before_trace.sampling_rate
 
-    plot_dir = args.output_dir
-    if not os.path.exists(plot_dir):
-        os.makedirs(plot_dir)
+    savedir = os.path.join(args.output_dir, export_config.savedir)
+    if not os.path.exists(savedir):
+        os.makedirs(savedir)
 
     before_voltage = before_trace.get_voltage()
     after_voltage = after_trace.get_voltage()
@@ -590,7 +590,7 @@ def run_qc_for_protocol(readname, savename, time_strs):
 
     # Setup QC instance. We could probably just do this inside the loop
     hergqc = hERGQC(sampling_rate=sampling_rate,
-                    plot_dir=plot_dir,
+                    plot_dir=savedir,
                     voltage=before_voltage)
 
     sweeps = [0, 1]
@@ -617,11 +617,13 @@ def run_qc_for_protocol(readname, savename, time_strs):
         after_currents = np.empty((nsweeps, after_trace.NofSamples))
 
         # Get ramp times from protocol description
-        voltage_protocol = VoltageProtocol(voltage, before_trace.get_times())
+        voltage_protocol = VoltageProtocol.from_voltage_trace(voltage,
+                                                              before_trace.get_times())
 
         # Get first ramp
         tstart, tend = voltage_protocol.get_ramps()[0][:2]
         t = before_trace.get_times()
+
         ramp_bounds = [np.argmax(t > tstart), np.argmax(t > tend)]
 
         assert after_trace.NofSamples == before_trace.NofSamples
@@ -632,13 +634,13 @@ def run_qc_for_protocol(readname, savename, time_strs):
                                                           sweep, ramp_bounds,
                                                           plot=True,
                                                           label=savename,
-                                                          output_dir=args.output_dir)
+                                                          output_dir=savedir)
 
             after_params1, after_leak = fit_linear_leak(after_trace, well,
                                                         sweep, ramp_bounds,
                                                         plot=True,
                                                         label=savename,
-                                                        output_dir=args.output_dir)
+                                                        output_dir=savedir)
 
             before_raw = np.array(raw_before_all[well])[sweep, :]
             after_raw = np.array(raw_after_all[well])[sweep, :]
@@ -650,7 +652,7 @@ def run_qc_for_protocol(readname, savename, time_strs):
         logging.info(savename + ' ' + well + ' ' + savename + '\n----------')
         logging.info(f"sampling_rate is {sampling_rate}")
 
-        plot_dir = os.path.join(args.output_dir, f"debug_{export_config.saveID}",
+        plot_dir = os.path.join(savedir, f"debug_{export_config.saveID}",
                                 f"{well}-{savename}")
 
         if not os.path.exists(plot_dir):
@@ -672,11 +674,10 @@ def run_qc_for_protocol(readname, savename, time_strs):
 
         # Save subtracted current in csv file
         header = "\"current\""
-        savepath = os.path.join(args.output_dir, export_config.savedir,
+        savepath = os.path.join(savedir,
                                 f"{export_config.saveID}-{savename}-{well}")
-        if not os.path.exists(os.path.join(args.output_dir,
-                                           export_config.savedir)):
-            os.makedirs(os.path.join(args.output_dir, export_config.savedir))
+        if not os.path.exists(savedir):
+            os.makedirs(savedir)
 
         for i in range(nsweeps):
             subtracted_current = before_currents[0, :] - after_currents[0, :]
@@ -708,7 +709,7 @@ def run_qc_for_protocol(readname, savename, time_strs):
 def qc3_bookend(readname, savename, time_strs):
 
     plot_dir = os.path.join(args.output_dir, export_config.savedir,
-                            "{saveID}-{savename}-plot")
+                            f"{export_config.saveID}-{savename}-plot")
 
     filepath_first = os.path.join(args.data_directory,
                                   f"{readname}_{time_strs[0]}")

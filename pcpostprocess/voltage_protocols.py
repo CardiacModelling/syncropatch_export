@@ -29,12 +29,6 @@ class VoltageProtocol():
     def from_voltage_trace(voltage_trace, times, holding_potential=-80.0):
         threshold = 1e-3
 
-        # Convert to mV
-        voltage_trace = voltage_trace * 1e3
-
-        # convert to ms
-        times = times * 1e3
-
         # Find gradient changes
         diff2 = np.abs(np.diff(voltage_trace, n=2))
 

@@ -62,17 +62,27 @@ class Trace:
         return VoltageProtocol.from_json(
             self.meta['ExperimentConditions']['VoltageProtocol'])
 
+    def get_protocol_description(self, holding_potential=-80.0):
+        """Get the protocol as a numpy array describing the voltages and
+        durations for each section
+
+        returns: np.array where each row contains the start time, end time,
+        initial voltage, and final voltage
+
+        """
+        return self.get_voltage_protocol().get_all_sections()
+
     def get_voltage(self):
         '''
         Returns the voltage stimulus from Nanion .json file
         '''
-        return np.array(self.TimeScaling['Stimulus']).astype(np.float64)
+        return np.array(self.TimeScaling['Stimulus']).astype(np.float64) * 1e3
 
     def get_times(self):
         '''
         Returns the time steps from Nanion .json file
         '''
-        return np.array(self.TimeScaling['TR_Time'])
+        return np.array(self.TimeScaling['TR_Time']) * 1e3
 
     def get_all_traces(self, leakcorrect=False):
         '''
