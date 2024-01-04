@@ -8,13 +8,12 @@ from .voltage_protocols import VoltageProtocol
 
 
 class Trace:
-    '''
-    Defines a Trace object from the output of a Nanion experiment.
+    """ Defines a Trace object from the output of a Nanion experiment.
 
     @params
     filepath: path pointing to folder containing .json and .dat files (str)
     json_file: specific filename of json file (str)
-    '''
+    """
 
     def __init__(self, filepath, json_file: str):
         # store file paths
@@ -57,10 +56,11 @@ class Trace:
         self.FileList = self.FileInformation['FileList']
         self.FileList.sort()
 
-    def get_protocol_description(self, holding_potential=-80.0):
-        voltage = self.get_voltage()
-        times = self.get_times()
-        return VoltageProtocol(voltage, times, holding_potential)
+        self.voltage_protocol = self.get_voltage_protocol()
+
+    def get_voltage_protocol(self, holding_potential=-80.0):
+        return VoltageProtocol.from_json(
+            self.meta['ExperimentConditions']['VoltageProtocol'])
 
     def get_voltage(self):
         '''

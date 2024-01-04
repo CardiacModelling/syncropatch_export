@@ -2,17 +2,38 @@ import numpy as np
 
 
 class VoltageProtocol():
-    def __init__(self, voltage_trace, times, holding_potential=-80.0):
+    def from_json(json_protocol):
+        """ Converts a protocol (from the json file) into a np.array
 
+        """
+
+        output_sections = []
+        for section in json_protocol:
+            tstart = float(section['SegmentStart_ms'])
+            tdur = float(section['Duration ms'])
+            vstart = float(section['VoltageStart'])
+            vend = float(section['VoltageEnd'])
+
+            output_sections.append(np.array((tstart, tstart + tdur,
+                                             vstart, vend)))
+
+        last_t = output_sections[-1][1]
+
+        # TODO check if there is a holding potential field in the file
+        holding_v = output_sections[0][2]
+
+        output_sections.append((last_t, np.inf, holding_v, holding_v))
+
+        return VoltageProtocol(np.array(output_sections))
+
+    def from_voltage_trace(voltage_trace, times, holding_potential=-80.0):
         threshold = 1e-3
 
         # Convert to mV
         voltage_trace = voltage_trace * 1e3
-        self.voltage_trace = voltage_trace
 
         # convert to ms
         times = times * 1e3
-        self.times = times
 
         # Find gradient changes
         diff2 = np.abs(np.diff(voltage_trace, n=2))
@@ -28,16 +49,28 @@ class VoltageProtocol():
         lst = []
         for start, end in windows:
             start_t = times[start]
-            end_t = times[end-1]
+            end_t = times[end]
+
+            ramp = voltage_trace[end - 1] != voltage_trace[start]
 
             v_start = voltage_trace[start]
-            v_end = voltage_trace[end-1]
+
+            if ramp:
+                grad = (voltage_trace[end - 1] - voltage_trace[start]) / \
+                    (times[end - 1] - times[start])
+                v_end = v_start + grad * (end_t - start_t)
+            else:
+                v_end = voltage_trace[end - 1]
 
             lst.append(np.array([start_t, end_t, v_start, v_end]))
 
         lst.append(np.array([end_t, np.inf, holding_potential,
                              holding_potential]))
-        self._desc = np.vstack(lst)
+        desc = np.vstack(lst)
+        return VoltageProtocol(desc)
+
+    def __init__(self, desc):
+        self._desc = desc
 
     def get_step_start_times(self):
         return [line[0] for line in self._desc]

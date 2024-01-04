@@ -4,9 +4,11 @@ import unittest
 from pathlib import Path
 
 import matplotlib.pyplot as plt
+
 import numpy as np
 
 from pcpostprocess.trace import Trace as tr
+from pcpostprocess.voltage_protocols import VoltageProtocol
 
 p = Path(__file__).parents[1]
 sys.path.insert(0, str(p))
@@ -23,6 +25,24 @@ class TestTraceClass(unittest.TestCase):
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
         self.test_trace = tr(filepath, json_file)
+
+    def test_protocol(self):
+        voltages = self.test_trace.get_voltage()
+        times = self.test_trace.get_times()
+
+        protocol_from_json = self.test_trace.get_voltage_protocol()
+        protocol_desc = VoltageProtocol.from_voltage_trace(voltages, times)
+
+        sections1 = protocol_from_json.get_all_sections()
+        sections2 = protocol_desc.get_all_sections()
+
+        print(sections1, sections2)
+
+        t_error = np.max(np.abs((sections1 - sections2))[:-2, :2])
+        v_error = np.max(np.abs((sections1 - sections2))[:, 2:])
+
+        self.assertLess(t_error, 1e-2)
+        self.assertLess(v_error, 1e-4)
 
     def test_get_traces(self):
         tr = self.test_trace
