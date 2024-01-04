@@ -1,26 +1,31 @@
 import json
-import numpy as np
+import os
 import string
+
+import numpy as np
+
+from .voltage_protocols import VoltageProtocol
 
 
 class Trace:
     '''
     Defines a Trace object from the output of a Nanion experiment.
-    Required as input:
-    filepath - path pointing to folder containing .json and .dat files (str)
-    json_file - specific filename of json file (str)
+
+    @params
+    filepath: path pointing to folder containing .json and .dat files (str)
+    json_file: specific filename of json file (str)
     '''
 
-    def __init__(self, filepath, json_file):
+    def __init__(self, filepath, json_file: str):
         # store file paths
         self.filepath = filepath
-        if ".json" in json_file:
+        if json_file[-5:] == '.json':
             self.json_file = json_file
         else:
             self.json_file = json_file + ".json"
 
         # load json file
-        with open(self.filepath + self.json_file) as f:
+        with open(os.path.join(self.filepath, self.json_file)) as f:
             self.meta = json.load(f)
 
         # store necessary header info
@@ -29,10 +34,17 @@ class Trace:
             self.TimeScaling = TraceHeader['TimeScaling']
         except KeyError:
             self.TimeScaling = TraceHeader['TimeScalingIV']
+
+        times = self.get_times()
+        self.sampling_rate = int(1 / (times[1] - times[0]))
+
         self.MeasurementLayout = TraceHeader['MeasurementLayout']
         self.FileInformation = TraceHeader['FileInformation']
+
         self.WELL_ID = [
-            [l+str(i).zfill(2) for l in string.ascii_uppercase[:16]] for i in range(1, 25)]
+            [lab + str(i).zfill(2) for lab in string.ascii_uppercase[:16]]
+            for i in range(1, 25)]
+
         self.NofSweeps = self.MeasurementLayout['NofSweeps']
         self.WP_nRows = TraceHeader['Chiplayout']['WP_nRows']
         self.WP_nCols = TraceHeader['Chiplayout']['WP_nCols']
@@ -45,17 +57,22 @@ class Trace:
         self.FileList = self.FileInformation['FileList']
         self.FileList.sort()
 
+    def get_protocol_description(self, holding_potential=-80.0):
+        voltage = self.get_voltage()
+        times = self.get_times()
+        return VoltageProtocol(voltage, times, holding_potential)
+
     def get_voltage(self):
         '''
         Returns the voltage stimulus from Nanion .json file
         '''
-        return self.TimeScaling['Stimulus']
+        return np.array(self.TimeScaling['Stimulus']).astype(np.float64)
 
     def get_times(self):
         '''
         Returns the time steps from Nanion .json file
         '''
-        return self.TimeScaling['TR_Time']
+        return np.array(self.TimeScaling['TR_Time'])
 
     def get_all_traces(self, leakcorrect=False):
         '''
@@ -79,7 +96,7 @@ class Trace:
             assert totalSweep > 0
 
             # get trace data
-            with open(self.filepath + trace_file, 'r') as f:
+            with open(os.path.join(self.filepath, trace_file), 'r') as f:
                 trace = np.fromfile(f, dtype=np.int16)
 
             # convert to numpy array
@@ -141,16 +158,19 @@ class Trace:
             OUT_idx_i.append(ReadOffset)
         return OUT_file_idx, OUT_idx_i
 
-    def get_trace_sweep(self, sweeps, leakcorrect=False):
+    def get_trace_sweeps(self, sweeps=None, leakcorrect=False):
         '''
         Returns a subset of sweeps defined by the input 'sweeps'
         '''
 
         # initialise output
-        OUT = {}
+        out_dict = {}
         for iCol in self.WELL_ID:
             for ijWell in iCol:
-                OUT[ijWell] = []
+                out_dict[ijWell] = []
+
+        if sweeps is None:
+            sweeps = list(range(self.NofSweeps))
 
         # check `getsweep` input is something sensible
         if len(sweeps) > self.NofSweeps:
@@ -171,7 +191,7 @@ class Trace:
 
             # get trace data
             trace_file = self.FileList[trace_file_idx]
-            with open(self.filepath + trace_file, 'r') as f:
+            with open(os.path.join(self.filepath, trace_file), 'r') as f:
                 trace = np.fromfile(f, dtype=np.int16)
 
             # convert to numpy array
@@ -199,14 +219,18 @@ class Trace:
                         + leakoffset * self.NofSamples
                     end = j * self.Leakdata * self.NofSamples \
                         + (leakoffset + 1) * self.NofSamples
-                    OUT[ijWell].append(iColTraces[start:end])
+                    out_dict[ijWell].append(np.array(iColTraces[start:end]))
 
                 # update idx_i
                 idx_i = idx_f
             del trace
-        return OUT
 
-    def get_onboard_QC_values(self, sweep=None):
+        for key in out_dict:
+            out_dict[key] = np.vstack(out_dict[key])
+
+        return out_dict
+
+    def get_onboard_QC_values(self, sweeps=None):
         '''Read quality control values Rseal, Cslow (Cm), and Rseries from a Nanion .json file
 
         returns: A dictionary where the keys are the well e.g. 'A01' and the
@@ -221,19 +245,19 @@ class Trace:
         Rseries = np.array(self.meta['QCData']['Rseries'])
 
         # initialise output
-        OUT = {}
+        out_dict = {}
         for iCol in self.WELL_ID:
             for ijWell in iCol:
-                OUT[ijWell] = []
+                out_dict[ijWell] = []
 
-        if sweep is None:
-            sweep = range(self.NofSweeps)
+        if sweeps is None:
+            sweeps = list(range(RSeal.shape[0]))
 
-        for k in sweep:
+        for k in sweeps:
             for i in range(self.WP_nCols):
                 for j in range(self.WP_nRows):
-                    OUT[self.WELL_ID[i][j]].append((RSeal[k][i][j],
-                                                    Capacitance[k][i][j],
-                                                    Rseries[k][i][j]))
+                    out_dict[self.WELL_ID[i][j]].append((RSeal[k, i, j],
+                                                         Capacitance[k, i, j],
+                                                         Rseries[k, i, j]))
 
-        return OUT
+        return out_dict

@@ -1,0 +1,18 @@
+[flake8]
+max_line_length = 120
+ignore =
+    # allow empty line at end of file
+    W391,
+    # break before binary operator - allow either style
+    W503,
+    # break after binary operator - allow either style
+    W504,
+    # missing whitespace around arithmetic operator
+    E226,
+    # Import sorting
+    I201
+    I100
+
+exclude=
+    .git,
+    venv,
