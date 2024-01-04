@@ -72,6 +72,7 @@ class VoltageProtocol():
     def __init__(self, desc):
         self._desc = desc
 
+
     def get_step_start_times(self):
         return [line[0] for line in self._desc]
 

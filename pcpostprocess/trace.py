@@ -15,6 +15,7 @@ class Trace:
     json_file: specific filename of json file (str)
     """
 
+
     def __init__(self, filepath, json_file: str):
         # store file paths
         self.filepath = filepath
