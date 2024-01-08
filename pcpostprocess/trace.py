@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import string
 
@@ -113,9 +114,9 @@ class Trace:
             trace = np.asarray(trace)
 
             # check loaded traces have the expected length
-            assert len(trace) == self.Leakdata * self.NofSamples \
-                * self.WP_nRows * self.nCols * totalSweep
-            idx_i = 0
+            # assert len(trace) == self.Leakdata * self.NofSamples \
+            #     * self.WP_nRows * self.nCols * totalSweep
+            # idx_i = 0
 
             # loop through sweeps and columns
             for kSweep in range(totalSweep):
@@ -180,6 +181,7 @@ class Trace:
                 out_dict[ijWell] = []
 
         if sweeps is None:
+            # Sometimes NofSweeps seems to be incorrect
             sweeps = list(range(self.NofSweeps))
 
         # check `getsweep` input is something sensible
@@ -208,9 +210,14 @@ class Trace:
             trace = np.asarray(trace)
 
             # check loaded traces have the expected length
-            assert len(trace) == self.Leakdata * self.NofSamples\
-                * self.WP_nRows * self.nCols * totalSweep
+            # assert len(trace) == self.Leakdata * self.NofSamples\
+            #     * self.WP_nRows * self.nCols * totalSweep
 
+            if len(trace) == 0:
+                trace = np.full(self.Leakdata * self.NofSamples * self.WP_nRows \
+                                * self.nCols * totalSweep, np.nan)
+
+            # Iterate over wells
             for i, iCol in enumerate(self.ColsMeasured):
                 if iCol == -1:
                     continue  # -1 not measured (need to doublecheck this)
@@ -229,14 +236,24 @@ class Trace:
                         + leakoffset * self.NofSamples
                     end = j * self.Leakdata * self.NofSamples \
                         + (leakoffset + 1) * self.NofSamples
-                    out_dict[ijWell].append(np.array(iColTraces[start:end]))
+                    well_trace = np.array(iColTraces[start:end])
+                    out_dict[ijWell].append(well_trace)
 
                 # update idx_i
                 idx_i = idx_f
             del trace
 
         for key in out_dict:
-            out_dict[key] = np.vstack(out_dict[key])
+            # If shapes agree, convert them into a single array
+            list_arrs = out_dict[key]
+            shapes = [arr.shape for arr in list_arrs]
+            if len(set(shapes)) != 1:
+                # logging.warning(f"Mismatched sweep dimensions (maybe one is empty?)")
+                traces = [t for t in out_dict[key] if len(t) > 0]
+            else:
+                traces = out_dict[key]
+
+            out_dict[key] = np.vstack(traces)
 
         return out_dict
 

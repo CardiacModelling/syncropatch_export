@@ -163,11 +163,10 @@ def main():
         os.makedirs(os.path.join(args.output_dir, savedir))
 
     # Write qc_df to file
-    qc_df.to_csv(os.path.join(args.output_dir,
-                              savedir, 'QC-%s.csv' % saveID))
+    qc_df.to_csv(os.path.join(savedir, 'QC-%s.csv' % saveID))
 
     # Write data to JSON file
-    qc_df.to_json(os.path.join(args.output_dir, savedir, 'QC-%s.json' % saveID),
+    qc_df.to_json(os.path.join(savedir, 'QC-%s.json' % saveID),
                   orient='records')
 
     # Overwrite old files
@@ -210,7 +209,7 @@ def main():
     savenames, readnames, times_list = [], [], []
     for protocol in res_dict:
         times = res_dict[protocol]
-        savename = export_config.D2S[protocol]
+        savename = combined_dict[protocol]
 
         readnames.append(protocol)
 
@@ -223,8 +222,8 @@ def main():
             times_list.append(times[:2])
 
             # Make seperate savename for protocol repeat
-            savename = export_config.D2S[protocol] + '_2'
-            assert savename not in export_config.D2S.values()
+            savename = combined_dict[protocol] + '_2'
+            assert savename not in combined_dict.values()
             savenames.append(savename)
             times_list.append(times[2:])
             readnames.append(protocol)
@@ -268,6 +267,7 @@ def main():
 
 
 def extract_protocol(readname, savename, time_strs, selected_wells):
+    logging.info('extracting ', savename)
     savedir = os.path.join(args.output_dir, export_config.savedir)
 
     saveID = export_config.saveID
@@ -277,8 +277,13 @@ def extract_protocol(readname, savename, time_strs, selected_wells):
     plot_dir = os.path.join(savedir,
                             f"{saveID}-{savename}-plot")
 
+    subtraction_plots_dir = os.path.join(savedir, 'subtraction_plots')
+
     if not os.path.isdir(plot_dir):
         os.makedirs(plot_dir)
+
+    if not os.path.isdir(subtraction_plots_dir):
+        os.makedirs(subtraction_plots_dir)
 
     logging.info(f"Exporting {readname} as {savename}")
 
@@ -381,7 +386,7 @@ def extract_protocol(readname, savename, time_strs, selected_wells):
         out_dir = os.path.join(savedir,
                                f"{saveID}-{savename}-leak_fit-before")
 
-        for sweep in list(range(before_trace.NofSweeps)):
+        for sweep in range(before_current.shape[0]):
             row_dict = {
                 'well': well,
                 'sweep': sweep,
@@ -486,11 +491,17 @@ def extract_protocol(readname, savename, time_strs, selected_wells):
 
     extract_df = pd.DataFrame.from_dict(rows)
 
-    nsweeps = before_trace.NofSweeps
     times = before_trace.get_times()
     voltages = before_trace.get_voltage()
 
+    before_current_all = before_trace.get_trace_sweeps()
+    after_current_all  = after_trace.get_trace_sweeps()
+
     for well in selected_wells:
+        before_current = before_current_all[well]
+        after_current = after_current_all[well]
+
+        nsweeps = before_current_all[well].shape[0]
 
         axs = setup_subtraction_grid(fig, nsweeps)
         protocol_axs, before_axs, after_axs, \
@@ -546,11 +557,16 @@ def extract_protocol(readname, savename, time_strs, selected_wells):
         long_protocol_ax.set_xlabel('time (ms)')
         long_protocol_ax.set_ylabel(r'$V_\text{command}$ (mV)')
 
-        fig.savefig(os.path.join(savedir,
+        fig.savefig(os.path.join(subtraction_plots_dir,
                                  f"{saveID}-{savename}-{well}-sweep{sweep}-subtraction"))
         fig.clf()
 
     plt.close(fig)
+
+    # extract protocol
+    before_trace.get_voltage_protocol().export_txt(os.path.join(savedir,
+                                                                f"{saveID}-{savename}.eph"))
+
     return extract_df
 
 
@@ -745,11 +761,6 @@ def qc3_bookend(readname, savename, time_strs):
 
     df = pd.DataFrame(rows, columns=['qc3.bookend', 'well'])
     df['protocol'] = savename
-
-
-    # output .eph file
-    trace.get_voltage_protocol().export_txt(os.path.join(savedir,
-                                                         f"{saveID}-{savename}.eph"))
 
     return df
 

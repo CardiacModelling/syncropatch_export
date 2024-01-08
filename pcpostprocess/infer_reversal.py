@@ -29,9 +29,7 @@ def infer_reversal_potential(trace: Trace, sweep: int, well: str, ax=None,
     voltages = voltages
 
     # Find indices of observations during the reversal ramp
-    prot_description = trace.get_protocol_description()
-    ramps = [line for line in prot_description.get_ramps()
-             if line[2] != line[3]]
+    ramps = trace.get_voltage_protocol().get_ramps()
 
     # Assume the last ramp is the reversal ramp (convert to ms)
     tstart, tend = np.array(ramps)[-1, :2]

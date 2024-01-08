@@ -81,8 +81,11 @@ class VoltageProtocol():
         """
         return np.array(self._desc)
 
-    def export_txt(fname):
+    def export_txt(self, fname):
         output_lines = ['Type \t Voltage \t Duration']
+
+        desc = self.get_all_sections()
+
         for (tstart, tend, vstart, vend) in desc:
             dur = tend - tstart
 
