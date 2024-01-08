@@ -97,23 +97,28 @@ def fit_linear_leak(trace: Trace, well, sweep, ramp_bounds, plot=False,
         # fit to leak ramp
         fig, ((ax1, ax3), (ax2, ax4)) = plt.subplots(2, 2, figsize=(7.5, 6))
 
+        start_t = times[ramp_bounds[0]]
+        end_t = times[ramp_bounds[1]]
+
         ax1.set_title('current vs time')
-        ax1.set_xlabel('time (s)')
+        ax1.set_xlabel('time (ms)')
         ax1.set_ylabel('current (pA)')
         ax1.plot(times, I_obs)
-        ax1.axvline(ramp_bounds[0]*0.0005, linestyle='--', color='k', alpha=0.5)
-        ax1.axvline(ramp_bounds[1]*0.0005, linestyle='--', color='k', alpha=0.5)
-        ax1.set_xlim(left=ramp_bounds[0]*0.0005 - 1,
-                     right=ramp_bounds[1]*0.0005 + 1)
+        ax1.axvline(start_t, linestyle='--', color='k', alpha=0.5)
+        ax1.axvline(end_t, linestyle='--', color='k', alpha=0.5)
+        ax1.set_xlim(left=start_t - 1,
+                     right=end_t + 1)
+        ax1.set_ylim(*np.quantile(I_obs[ramp_bounds[0]:ramp_bounds[1]],
+                                  [0, 1]))
 
         ax2.set_title('voltage vs time')
-        ax2.set_xlabel('time (s)')
+        ax2.set_xlabel('time (ms)')
         ax2.set_ylabel('voltage (mV)')
         ax2.plot(times, V)
-        ax2.axvline(ramp_bounds[0]*0.0005, linestyle='--', color='k', alpha=0.5)
-        ax2.axvline(ramp_bounds[1]*0.0005, linestyle='--', color='k', alpha=0.5)
-        ax2.set_xlim(left=ramp_bounds[0]*0.0005 - 1,
-                     right=ramp_bounds[1]*0.0005 + 1)
+        ax2.axvline(start_t, linestyle='--', color='k', alpha=0.5)
+        ax2.axvline(end_t, linestyle='--', color='k', alpha=0.5)
+        ax2.set_xlim(left=start_t - 1,
+                     right=end_t + 1)
 
         ax3.set_title('current vs voltage')
         ax3.set_xlabel('voltage (mV)')

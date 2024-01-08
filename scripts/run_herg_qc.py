@@ -98,6 +98,8 @@ def main():
 
     readnames, savenames, times_list = [], [], []
 
+    combined_dict = {**export_config.D2S, **export_config.D2S_QC}
+
     # Select QC protocols and times
     for protocol in res_dict:
 
@@ -118,7 +120,7 @@ def main():
             times_list.append(times[:2])
 
             # Make seperate savename for protocol repeat
-            savename = export_config.D2S[protocol] + '_2'
+            savename = combined_dict[protocol] + '_2'
             assert savename not in export_config.D2S.values()
             savenames.append(savename)
             times_list.append(times[2:])
@@ -658,7 +660,7 @@ def run_qc_for_protocol(readname, savename, time_strs):
         if not os.path.exists(plot_dir):
             os.makedirs(plot_dir)
 
-        hERGQC.plot_dir = plot_dir
+        hergqc.plot_dir = plot_dir
 
         # Run QC with leak subtracted currents
         selected, QC = hergqc.run_qc(before_currents,
@@ -743,6 +745,12 @@ def qc3_bookend(readname, savename, time_strs):
 
     df = pd.DataFrame(rows, columns=['qc3.bookend', 'well'])
     df['protocol'] = savename
+
+
+    # output .eph file
+    trace.get_voltage_protocol().export_txt(os.path.join(savedir,
+                                                         f"{saveID}-{savename}.eph"))
+
     return df
 
 

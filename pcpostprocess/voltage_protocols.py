@@ -80,3 +80,24 @@ class VoltageProtocol():
 
         """
         return np.array(self._desc)
+
+    def export_txt(fname):
+        output_lines = ['Type \t Voltage \t Duration']
+        for (tstart, tend, vstart, vend) in desc:
+            dur = tend - tstart
+
+            if vstart == vend:
+                _type = 'Set'
+            else:
+                _type = 'Ramp'
+
+            if round:
+                vend = np.round(vend)
+
+            output_lines.append(f"{_type}\t{vend}\t{dur}")
+
+        with open(fname, 'w') as fout:
+            for line in output_lines:
+                fout.write(line)
+                fout.write('\n')
+

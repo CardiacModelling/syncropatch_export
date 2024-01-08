@@ -70,7 +70,7 @@ class hERGQC(object):
         self.qc6_1_win = self.qc6_1_win.astype(int)
         self.qc6_2_win = self.qc6_2_win.astype(int)
 
-        self._debug = False
+        self._debug = True
         self.fcap = None
 
         self.qc_labels = ['qc1.rseal', 'qc1.cm', 'qc1.rseries', 'qc2.raw',
@@ -179,7 +179,8 @@ class hERGQC(object):
 
         if self._debug:
             fig = plt.figure(figsize=(8, 5))
-            fig.plot(before[0, :] - after[0, :])
+            ax = fig.subplots()
+            ax.plot(before[0, :] - after[0, :])
             for l1, l2, l3, l4 in zip(self.qc5_win, self.qc6_win,
                                       self.qc6_1_win, self.qc6_2_win):
                 plt.axvline(l1, c='#7f7f7f', label='qc5')
@@ -300,7 +301,7 @@ class hERGQC(object):
         else:
             i, f = 0, -1
 
-        if self.plot_dir:
+        if self.plot_dir and self._debug:
             plt.axvspan(win[0], win[1], color='grey', alpha=.1)
             plt.plot(recording1, label='recording1')
             plt.plot(recording2, label='recording2')
@@ -324,7 +325,7 @@ class hERGQC(object):
         else:
             i, f = 0, -1
 
-        if self.plot_dir:
+        if self.plot_dir and self._debug:
             if win:
                 plt.axvspan(win[0], win[1], color='grey', alpha=.1)
             else:
@@ -353,7 +354,7 @@ class hERGQC(object):
             i, f = 0, -1
         val = np.mean(recording1[i:f])
 
-        if self.plot_dir:
+        if self.plot_dir and self._debug:
             plt.axvspan(win[0], win[1], color='grey', alpha=.1)
             plt.plot(recording1, label='recording1')
             plt.savefig(os.path.join(self.plot_dir, f"qc6_{label}"))
