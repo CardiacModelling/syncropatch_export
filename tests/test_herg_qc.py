@@ -43,7 +43,7 @@ class TestHergQC(unittest.TestCase):
         self.assertTrue(np.all(np.isfinite(ts)))
 
         # Calculate sampling rate in (use kHz)
-        sampling_rate = int(1.0e-3 / (ts[1] - ts[0]))
+        sampling_rate = int(1.0 / (ts[1] - ts[0]))
 
         plot_dir = os.path.join(self.output_dir,
                                 'test_run_qc')
