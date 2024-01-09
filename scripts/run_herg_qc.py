@@ -18,9 +18,6 @@ from pcpostprocess.leak_correct import fit_linear_leak
 from pcpostprocess.trace import Trace
 from pcpostprocess.voltage_protocols import VoltageProtocol
 
-global wells
-wells = [row + str(i).zfill(2) for row in string.ascii_uppercase[:16] for i in
-         range(1, 25)]
 
 pool_kws = {'maxtasksperchild': 16}
 
@@ -58,6 +55,7 @@ def main():
     if args.wells is None:
         args.wells = [row + str(i).zfill(2) for row in string.ascii_uppercase[:16]
                       for i in range(1, 25)]
+        wells = args.wells
 
     else:
         wells = args.wells
@@ -274,13 +272,7 @@ def extract_protocol(readname, savename, time_strs, selected_wells):
 
     row_dict = {}
 
-    plot_dir = os.path.join(savedir,
-                            f"{saveID}-{savename}-plot")
-
     subtraction_plots_dir = os.path.join(savedir, 'subtraction_plots')
-
-    if not os.path.isdir(plot_dir):
-        os.makedirs(plot_dir)
 
     if not os.path.isdir(subtraction_plots_dir):
         os.makedirs(subtraction_plots_dir)
@@ -565,7 +557,7 @@ def extract_protocol(readname, savename, time_strs, selected_wells):
 
     # extract protocol
     before_trace.get_voltage_protocol().export_txt(os.path.join(savedir,
-                                                                f"{saveID}-{savename}.eph"))
+                                                                f"{saveID}-{savename}.txt"))
 
     return extract_df
 
@@ -727,7 +719,8 @@ def run_qc_for_protocol(readname, savename, time_strs):
 def qc3_bookend(readname, savename, time_strs):
 
     plot_dir = os.path.join(args.output_dir, export_config.savedir,
-                            f"{export_config.saveID}-{savename}-plot")
+                            f"{export_config.saveID}-{savename}-qc3-bookend")
+
 
     filepath_first = os.path.join(args.data_directory,
                                   f"{readname}_{time_strs[0]}")
