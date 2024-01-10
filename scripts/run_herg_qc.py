@@ -664,7 +664,7 @@ def run_qc_for_protocol(readname, savename, time_strs):
             after_currents[sweep, :] = after_raw - after_leak
 
         # TODO Note: only run this for whole/staircaseramp for now...
-        logger.info(savename + ' ' + well + ' ' + savename + '\n----------')
+        logger.info(f"{well} {savename}\n----------")
         logger.info(f"sampling_rate is {sampling_rate}")
 
         # Run QC with leak subtracted currents

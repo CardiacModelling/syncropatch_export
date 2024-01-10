@@ -243,7 +243,7 @@ class hERGQC(object):
             noise = np.std(recording[:200])
             snr = (np.std(recording) / noise) ** 2
         if snr < self.snrc or not np.isfinite(snr):
-            self.logger.debug(f"snr: {snr}", snr)
+            self.logger.debug(f"snr: {snr}")
             return False
         return True
 
