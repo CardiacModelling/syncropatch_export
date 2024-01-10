@@ -33,14 +33,16 @@ def main():
     parser.add_argument('--subtracted_only', action='store_true')
     parser.add_argument('--figsize', nargs=2, type=int, default=[12, 9])
     parser.add_argument('--debug', action='store_true')
+    parser.add_argument('--log_level', default='INFO')
     parser.add_argument('--Erev', default=-90.71, type=float)
 
     global args
     args = parser.parse_args()
 
-    if args.debug:
-        logging.basicConfig()
-        logging.getLogger().setLevel(logging.INFO)
+    logging.basicConfig(level=args.log_level)
+    global logger
+    logger = logging.getLogger(__name__)
+    logger.setLevel(args.log_level)
 
     if args.output_dir is None:
         args.output_dir = os.path.join('output', 'hergqc')
@@ -115,13 +117,13 @@ def main():
 
         elif len(times) == 4:
             savenames.append(savename)
-            times_list.append(times[:2])
+            times_list.append(times[::2])
 
             # Make seperate savename for protocol repeat
             savename = combined_dict[protocol] + '_2'
             assert savename not in export_config.D2S.values()
             savenames.append(savename)
-            times_list.append(times[2:])
+            times_list.append(times[1::2])
             readnames.append(protocol)
 
     with multiprocessing.Pool(min(args.no_cpus, len(export_config.D2S_QC)),
@@ -174,7 +176,7 @@ def main():
             pass
 
     overall_selection = []
-    for well in args.wells:
+    for well in qc_df.well.unique():
         failed = False
         for well_selection, protocol in zip(well_selections,
                                             list(export_config.D2S_QC.values())):
@@ -228,6 +230,8 @@ def main():
 
     wells_to_export = wells if args.export_failed else overall_selection
 
+    logger.info(f"exporting wells {wells}")
+
     with multiprocessing.Pool(min(args.no_cpus, len(export_config.D2S_QC)),
                               **pool_kws) as pool:
         dfs = list(pool.starmap(extract_protocol, zip(readnames,
@@ -237,6 +241,7 @@ def main():
                                                       * len(savenames)))
                    )
     extract_df = pd.concat(dfs, ignore_index=True)
+    print(extract_df)
 
     passed_qc_dict = {}
     for well in extract_df.well.unique():
@@ -263,9 +268,15 @@ def main():
     extract_df['passed QC'] = [passed_qc_dict[well] for well in extract_df.well]
     extract_df.to_csv(os.path.join(args.output_dir, 'subtraction_qc.csv'))
 
+    with open(os.path.join(args.output_dir, 'passed_wells.txt')) as fout:
+        for well, passed in passed_qc_dict.items():
+            if passed:
+                fout.write(well)
+                fout.write('\n')
+
 
 def extract_protocol(readname, savename, time_strs, selected_wells):
-    logging.info('extracting ', savename)
+    logger.info('extracting ', savename)
     savedir = os.path.join(args.output_dir, export_config.savedir)
 
     saveID = export_config.saveID
@@ -277,7 +288,7 @@ def extract_protocol(readname, savename, time_strs, selected_wells):
     if not os.path.isdir(subtraction_plots_dir):
         os.makedirs(subtraction_plots_dir)
 
-    logging.info(f"Exporting {readname} as {savename}")
+    logger.info(f"Exporting {readname} as {savename}")
 
     filepath_before = os.path.join(args.data_directory,
                                    f"{readname}_{time_strs[0]}")
@@ -308,7 +319,7 @@ def extract_protocol(readname, savename, time_strs, selected_wells):
     try:
         assert all(np.abs(times_before - times_after) < 1e-8)
     except Exception as exc:
-        logging.warning(f"Exception thrown when handling {savename}: ", str(exc))
+        logger.warning(f"Exception thrown when handling {savename}: ", str(exc))
         return
 
     header = "\"current\""
@@ -320,7 +331,7 @@ def extract_protocol(readname, savename, time_strs, selected_wells):
 
     for i_well, well in enumerate(selected_wells):  # Go through all wells
         if i_well % 24 == 0:
-            logging.info('row ' + well[0])
+            logger.info('row ' + well[0])
 
         if args.selection_file:
             if well not in selected_wells:
@@ -452,18 +463,6 @@ def extract_protocol(readname, savename, time_strs, selected_wells):
 
             row_dict['QC.Erev'] = E_rev < -50 and E_rev > -120
 
-            # Get indices of first step up to +40mV
-            protocol_description = before_trace.get_voltage_protocol()
-            steps_40 = [step for step in protocol_description.get_all_sections()
-                        if step[2] == 40.0 and step[3] == 40.0]
-            # print(protocol_description.get_all_sections())
-            # print(steps_40)
-            assert len(steps_40) >= 2
-            tstart, tend = steps_40[0][:2]
-            times = before_trace.get_times()
-            istart = np.argmax(times > tstart)
-            iend = np.argmax(times > tstart)
-
             # Check QC6 for each protocol (not just the staircase)
             plot_dir = os.path.join(savedir, 'debug')
 
@@ -475,7 +474,7 @@ def extract_protocol(readname, savename, time_strs, selected_wells):
                             n_sweeps=before_trace.NofSweeps)
 
             row_dict['QC6'] = hergqc.qc6(subtracted_trace,
-                                         win=[istart, iend],
+                                         win=hergqc.qc6_win,
                                          label='0')
 
             np.savetxt(out_fname, subtracted_trace.flatten())
@@ -598,9 +597,15 @@ def run_qc_for_protocol(readname, savename, time_strs):
 
     voltage = before_voltage
 
+
+    plot_dir = os.path.join(savedir, 'debug')
+
+    if not os.path.exists(plot_dir):
+        os.makedirs(plot_dir)
+
     # Setup QC instance. We could probably just do this inside the loop
     hergqc = hERGQC(sampling_rate=sampling_rate,
-                    plot_dir=savedir,
+                    plot_dir=plot_dir,
                     voltage=before_voltage)
 
     sweeps = [0, 1]
@@ -659,16 +664,8 @@ def run_qc_for_protocol(readname, savename, time_strs):
             after_currents[sweep, :] = after_raw - after_leak
 
         # TODO Note: only run this for whole/staircaseramp for now...
-        logging.info(savename + ' ' + well + ' ' + savename + '\n----------')
-        logging.info(f"sampling_rate is {sampling_rate}")
-
-        plot_dir = os.path.join(savedir, f"debug_{export_config.saveID}",
-                                f"{well}-{savename}")
-
-        if not os.path.exists(plot_dir):
-            os.makedirs(plot_dir)
-
-        hergqc.plot_dir = plot_dir
+        logger.info(savename + ' ' + well + ' ' + savename + '\n----------')
+        logger.info(f"sampling_rate is {sampling_rate}")
 
         # Run QC with leak subtracted currents
         selected, QC = hergqc.run_qc(before_currents,
@@ -677,7 +674,7 @@ def run_qc_for_protocol(readname, savename, time_strs):
                                      np.array(qc_after[well])[0, :],
                                      nsweeps)
 
-        df_rows.append([well] + QC)
+        df_rows.append([well] + list(QC))
 
         if selected:
             selected_wells.append(well)
