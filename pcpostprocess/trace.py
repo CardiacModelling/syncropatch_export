@@ -87,7 +87,13 @@ class Trace:
 
     def get_all_traces(self, leakcorrect=False):
         '''
-        Returns all raw current traces from .dat files
+
+        Params:
+        leakcorrect: Bool. Set to true if onboard leak correction was used
+
+        Returns: all raw current traces from .dat files
+
+        TODO: Rename. Detect 'leakcorrect' flag automatically
         '''
 
         # initialise output
@@ -288,3 +294,25 @@ class Trace:
                                                          Rseries[k, i, j]))
 
         return out_dict
+
+
+    def get_onboard_QC_dict(self, sweeps=None):
+        QC_dict = self.get_onboard_QC_values(sweeps)
+
+        if sweeps is None:
+            sweeps = list(range(self.NofSweeps))
+
+        df_rows = []
+        for sweep in sweeps:
+            for well in self.WELL_ID.values():
+                if well <= len(out_dict[well]):
+                    continue
+                Rseal, Capacitance, Rseries =out_dict[well][sweep]
+                df_row = {'Rseal': Rseal,
+                          'Cm': Capacitance,
+                          'Rseries': Rseries,
+                          'well': well,
+                          }
+                df_rows.append(df_row)
+
+        return pd.from_records(df_rows)
