@@ -76,7 +76,6 @@ class hERGQC(object):
         self.qc6_2_win = self.qc6_2_win.astype(int)
 
         self._debug = True
-        self.fcap = None
 
         self.qc_labels = ['qc1.rseal', 'qc1.cm', 'qc1.rseries', 'qc2.raw',
                           'qc2.subtracted', 'qc3.raw', 'qc3.E4031',
@@ -87,9 +86,6 @@ class hERGQC(object):
 
     def get_qc_names(self):
         return self.QCnames
-
-    def set_fcap(self, fcap):
-        self.fcap = fcap
 
     def set_trace(self, before, after, qc_vals_before,
                   qc_vals_after, n_sweeps):
@@ -135,12 +131,6 @@ class hERGQC(object):
 
         if (None in qc_vals_before) or (None in qc_vals_after):
             return False, [False] * 3 + [None] * 13
-
-        # Filter off capacitive spikes
-        # if self.fcap is not None:
-        #     for i in range(len(before)):
-        #         before[i] = before[i] * self.fcap
-        #         after[i] = after[i] * self.fcap
 
         qc1_1 = self.qc1(*qc_vals_before)
         qc1_2 = self.qc1(*qc_vals_after)
