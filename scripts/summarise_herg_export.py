@@ -1,15 +1,9 @@
-#!/usr/bin/env python3
-
 import argparse
-import itertools
 import logging
-import multiprocessing
 import os
 import string
-import uuid
 
 import matplotlib
-import matplotlib.lines as mlines
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -17,9 +11,9 @@ import regex as re
 import scipy
 import seaborn as sns
 from matplotlib import rc
-import multiprocessing
 from matplotlib.colors import ListedColormap
 
+from pcpostprocessing.voltage_protocols import VoltageProtocol
 
 
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
@@ -359,7 +353,7 @@ def do_scatter_matrices(df, qc_df):
     #     qc_df = qc_df[qc_df.well.isin(passed_wells)]
 
     first_sweep = sorted(list(qc_df.sweep.unique()))[0]
-    qc_df = qc_df[(qc_df.protocol=='staircaseramp1') &
+    qc_df = qc_df[(qc_df.protocol == 'staircaseramp1') &
                   (qc_df.sweep == first_sweep) &
                   (qc_df.drug == 'before')]
 
@@ -456,7 +450,8 @@ def plot_leak_conductance_change_sweep_to_sweep(df):
 
         rows = []
         for well in sub_df.well.unique():
-            delta_rev = sweep2_vals.loc[well]['pre-drug leak conductance'] - sweep1_vals.loc[well]['pre-drug leak conductance']
+            delta_rev = sweep2_vals.loc[well]['pre-drug leak conductance'] - \
+                sweep1_vals.loc[well]['pre-drug leak conductance']
             passed_QC = well in passed_wells
             rows.append([well, delta_rev, passed_QC])
 
@@ -471,7 +466,6 @@ def plot_leak_conductance_change_sweep_to_sweep(df):
 def plot_spatial_Erev(df):
     def func(protocol, sweep):
         zs = []
-        found_value = False
         for row in range(16):
             for column in range(24):
                 well = f"{string.ascii_uppercase[row]}{column+1:02d}"
@@ -496,19 +490,18 @@ def plot_spatial_Erev(df):
         finite_indices = np.isfinite(zs)
 
         zs[finite_indices] = (zs[finite_indices] <= zs[np.isfinite(zs)].mean())
+        zs[~finite_indices] = 2
         zs = np.array(zs).reshape((16, 24))
 
-        zs[zs == True] = 0
-        zs[zs == False] = 1
-        zs[~np.isfinite(zs)] = 2
-
+        zs[zs] = 0
+        zs[~zs] = 1
 
         fig = plt.figure(figsize=args.figsize)
         ax = fig.subplots()
         # add black color for NaNs
         cmap = ListedColormap([orangey_red_rgb, bluey_green_rgb, (0, 0, 0)])
-        im = ax.pcolormesh(zs, cmap=cmap, edgecolors='white',
-                           linewidths=1, antialiased=True)
+        ax.pcolormesh(zs, cmap=cmap, edgecolors='white',
+                      linewidths=1, antialiased=True)
 
         ax.plot([], [], color=orangey_red_rgb, ls='None', marker='s', label='high E_rev')
         ax.plot([], [], color=bluey_green_rgb, ls='None', marker='s', label='low E_rev')
@@ -533,18 +526,17 @@ def plot_spatial_Erev(df):
 
     func(protocol, sweep)
 
+
 def plot_spatial_passed(df):
     fig = plt.figure(figsize=(5, 3))
     ax = fig.subplots()
     zs = []
-    zs2 = []
 
     for row in range(16):
         for column in range(24):
             well = f"{string.ascii_uppercase[row]}{column+1:02d}"
             passed = well in passed_wells
             zs.append(passed)
-
 
     zs = np.array(zs).reshape(16, 24)
     print(zs)
@@ -682,7 +674,8 @@ def overlay_reversal_plots(leak_parameters_df):
             if protocol == np.nan:
                 continue
             for sweep in sweeps_to_plot:
-                voltage_fname = os.path.join(data_dir, f"{experiment_name}-{protocol}-voltages.csv")
+                voltage_fname = os.path.join(args.data_dir,
+                                             f"{experiment_name}-{protocol}-voltages.csv")
                 voltages = np.loadtxt(voltage_fname).flatten()
 
                 protocol = VoltageProtocol.from_voltage_trace(voltages)
@@ -702,8 +695,8 @@ def overlay_reversal_plots(leak_parameters_df):
                 ramp_start, ramp_end = reversal_ramp[:2]
 
                 # Next extract steps
-                istart = np.argmax(times >= step[0])
-                iend = np.argmax(times > step[1])
+                istart = np.argmax(times >= ramp_start)
+                iend = np.argmax(times > ramp_end)
 
                 if istart == 0 or iend == 0 or istart == iend:
                     raise Exception("Couldn't identify reversal ramp")

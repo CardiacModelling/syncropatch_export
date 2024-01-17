@@ -19,8 +19,6 @@ from pcpostprocess.leak_correct import detect_ramp_bounds, fit_linear_leak, get_
 from pcpostprocess.trace import Trace
 from pcpostprocess.voltage_protocols import VoltageProtocol
 
-import matplotlib.ticker as mtick
-
 matplotlib.rc('font', size='9')
 
 pool_kws = {'maxtasksperchild': 1}
@@ -157,7 +155,7 @@ def main():
     if not os.path.exists(os.path.join(args.output_dir, savedir)):
         os.makedirs(os.path.join(args.output_dir, savedir))
 
-    # qc_df will be updated and saved again, but it's useful to save them here for debugging
+    #  qc_df will be updated and saved again, but it's useful to save them here for debugging
     # Write qc_df to file
     qc_df.to_csv(os.path.join(savedir, 'QC-%s.csv' % saveID))
 
@@ -293,7 +291,7 @@ def main():
     extract_df['QC.Erev.spread'] = [qc_erev_spread[well] for well in extract_df.well]
     extract_df['Erev_spread'] = [erev_spreads[well] for well in extract_df.well]
 
-    # Update qc_df
+    #  Update qc_df
     update_cols = []
     for index, vals in qc_df.iterrows():
         append_dict = {}
@@ -328,7 +326,7 @@ def main():
     qc_df.to_json(os.path.join(savedir, 'QC-%s.json' % saveID),
                   orient='records')
 
-    # Load only QC vals. TODO use a new variabile name to avoid confusion
+    #  Load only QC vals. TODO use a new variabile name to avoid confusion
     qc_df['drug'] = 'before'
     qc_df = extract_df[['well', 'sweep', 'protocol', 'Rseal', 'Cm', 'Rseries']]
     qc_df.to_csv(os.path.join(args.output_dir, 'qc_vals_df.csv'))
@@ -340,6 +338,7 @@ def main():
             if passed:
                 fout.write(well)
                 fout.write('\n')
+
 
 def extract_protocol(readname, savename, time_strs, selected_wells):
     logger.info(f"extracting {savename}")
@@ -554,13 +553,12 @@ def extract_protocol(readname, savename, time_strs, selected_wells):
                                          win=hergqc.qc6_win,
                                          label='0')
 
-
-            # Assume there is only one sweep for all non-QC protocols
+            #  Assume there is only one sweep for all non-QC protocols
             rseal_before, cm_before, rseries_before = qc_before[well][0]
             rseal_after, cm_after, rseries_after = qc_after[well][0]
 
-            row_dict['QC1'] = all(list(hergqc.qc1(rseal_before, cm_before, rseries_before)) + \
-                list(hergqc.qc1(rseal_after, cm_after, rseries_after)))
+            row_dict['QC1'] = all(list(hergqc.qc1(rseal_before, cm_before, rseries_before)) +
+                                  list(hergqc.qc1(rseal_after, cm_after, rseries_after)))
 
             row_dict['QC4'] = all(hergqc.qc4([rseal_before, rseal_after],
                                              [cm_before, cm_after],
@@ -579,7 +577,7 @@ def extract_protocol(readname, savename, time_strs, selected_wells):
     voltages = before_trace.get_voltage()
 
     before_current_all = before_trace.get_trace_sweeps()
-    after_current_all  = after_trace.get_trace_sweeps()
+    after_current_all = after_trace.get_trace_sweeps()
 
     # Convert everything to nA...
     before_current_all = {key: value * 1e-3 for key, value in before_current_all.items()}
@@ -587,7 +585,6 @@ def extract_protocol(readname, savename, time_strs, selected_wells):
 
     before_leak_current_dict = {key: value * 1e-3 for key, value in before_leak_current_dict.items()}
     after_leak_current_dict = {key: value * 1e-3 for key, value in after_leak_current_dict.items()}
-
 
     # TODO Put this code in a seperate function so we can easily plot individual subtractions
     for well in selected_wells:
@@ -667,7 +664,7 @@ def extract_protocol(readname, savename, time_strs, selected_wells):
                                                        well, sweep,
                                                        ramp_bounds)
 
-            subtracted_current = before_current[i, :] - before_leak_currents[i, :]- \
+            subtracted_current = before_current[i, :] - before_leak_currents[i, :] - \
                 (after_current[i, :] - after_leak_currents[i, :])
             ax.plot(times, subtracted_current, label=f"sweep {sweep}")
             ax.set_ylabel(r'$I_\text{obs, subtracted}$ (mV)')
@@ -730,10 +727,9 @@ def run_qc_for_protocol(readname, savename, time_strs):
 
     voltage = before_voltage
 
-
     sweeps = [0, 1]
     raw_before_all = before_trace.get_trace_sweeps(sweeps)
-    raw_after_all  = after_trace.get_trace_sweeps(sweeps)
+    raw_after_all = after_trace.get_trace_sweeps(sweeps)
 
     selected_wells = []
     for well in args.wells:
@@ -753,11 +749,12 @@ def run_qc_for_protocol(readname, savename, time_strs):
 
         # Check if any cell first!
         if (None in qc_before[well][0]) or (None in qc_after[well][0]):
-            no_cell = True
-            # continue
+            # no_cell = True
+            continue
 
         else:
-            no_cell = False
+            # no_cell = False
+            pass
 
         nsweeps = before_trace.NofSweeps
         assert after_trace.NofSweeps == nsweeps
@@ -818,7 +815,7 @@ def run_qc_for_protocol(readname, savename, time_strs):
         for i in range(nsweeps):
 
             savepath = os.path.join(savedir,
-                                f"{export_config.saveID}-{savename}-{well}-sweep{i}.csv")
+                                    f"{export_config.saveID}-{savename}-{well}-sweep{i}.csv")
             if not os.path.exists(savedir):
                 os.makedirs(savedir)
             subtracted_current = before_currents[0, :] - after_currents[0, :]
@@ -847,7 +844,7 @@ def run_qc_for_protocol(readname, savename, time_strs):
 
 
 def qc3_bookend(readname, savename, time_strs):
-    # TODO Run this with subtracted traces
+    #  TODO Run this with subtracted traces
     plot_dir = os.path.join(args.output_dir, export_config.savedir,
                             f"{export_config.saveID}-{savename}-qc3-bookend")
 
@@ -873,9 +870,9 @@ def qc3_bookend(readname, savename, time_strs):
                                             ramp_bounds)
 
     filepath_first_after = os.path.join(args.data_directory,
-                                  f"{readname}_{time_strs[2]}")
+                                        f"{readname}_{time_strs[2]}")
     filepath_last_after = os.path.join(args.data_directory,
-                                 f"{readname}_{time_strs[3]}")
+                                       f"{readname}_{time_strs[3]}")
     json_file_first_after = f"{readname}_{time_strs[2]}"
     json_file_last_after = f"{readname}_{time_strs[3]}"
 
@@ -893,12 +890,11 @@ def qc3_bookend(readname, savename, time_strs):
     assert np.all(first_after_trace.get_voltage() == last_after_trace.get_voltage())
     assert np.all(first_before_trace.get_voltage() == first_after_trace.get_voltage())
 
-    first_processed = {well: before_traces_first[well] - after_traces_first[well]\
+    first_processed = {well: before_traces_first[well] - after_traces_first[well]
                        for well in before_traces_first}
 
-
-    last_processed = {well: before_traces_last[well] - after_traces_last[well]\
-                       for well in after_traces_first}
+    last_processed = {well: before_traces_last[well] - after_traces_last[well]
+                      for well in after_traces_first}
 
     assert np.all(first_before_trace.get_voltage() == last_before_trace.get_voltage())
 
@@ -910,8 +906,8 @@ def qc3_bookend(readname, savename, time_strs):
 
     assert first_before_trace.NofSweeps == last_before_trace.NofSweeps
 
-    first_trace_sweeps = first_before_trace.get_trace_sweeps()
-    last_trace_sweeps = last_before_trace.get_trace_sweeps()
+    # first_trace_sweeps = first_before_trace.get_trace_sweeps()
+    # last_trace_sweeps = last_before_trace.get_trace_sweeps()
     res_dict = {}
     for well in args.wells:
         passed = hergqc.qc3(first_processed[well][0, :],

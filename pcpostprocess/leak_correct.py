@@ -66,17 +66,20 @@ def detect_ramp_bounds(trace, voltage_protocol):
 
 
 def get_leak_corrected(trace: Trace, ramp_bounds, QC_dict=None):
-    """ Leak correct all data in a trace
+    """Leak correct all data in a trace
 
     @Params:
     trace: the Trace instance to leak correct
 
     ramp_bounds: an tuple of two floats describing the start and end of the leak ramp
 
-    QC_dict: an optional dictionary of the same format outputted by get_QC_dict for filtering which wells and sweeps are outputted
+    QC_dict: an optional dictionary of the same format outputted by get_QC_dict
+    for filtering which wells and sweeps are outputted
 
 
-    @Returns: A dictionary where the key is the well and the value is a leak-corrected trace
+    @Returns: A dictionary where the key is the well and the value is a
+    leak-corrected trace
+
     """
 
     leak_corrected = {}

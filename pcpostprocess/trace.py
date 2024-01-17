@@ -1,9 +1,9 @@
 import json
-import logging
 import os
 import string
 
 import numpy as np
+import pandas as pd
 
 from .voltage_protocols import VoltageProtocol
 
@@ -77,7 +77,8 @@ class Trace:
         '''
         Returns the voltage stimulus from Nanion .json file
         '''
-        return np.array(self.TimeScaling['Stimulus']).astype(np.float64) * 1e3
+        return np.array(self.TimeScaling['Stimulus']).astype(np.float64)\
+            * 1e3
 
     def get_times(self):
         '''
@@ -245,9 +246,9 @@ class Trace:
         df_rows = []
         for sweep in sweeps:
             for well in self.WELL_ID.values():
-                if well <= len(out_dict[well]):
+                if well <= len(QC_dict[well]):
                     continue
-                Rseal, Capacitance, Rseries = out_dict[well][sweep]
+                Rseal, Capacitance, Rseries = QC_dict[well][sweep]
                 df_row = {'Rseal': Rseal,
                           'Cm': Capacitance,
                           'Rseries': Rseries,
