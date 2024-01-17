@@ -345,6 +345,10 @@ def extract_protocol(readname, savename, time_strs, selected_wells):
     savedir = os.path.join(args.output_dir, export_config.savedir)
 
     saveID = export_config.saveID
+    traces_dir = os.path.join(savedir, 'traces')
+
+    if not os.path.exists(traces_dir):
+        os.makedirs(traces_dir)
 
     row_dict = {}
 
@@ -406,7 +410,7 @@ def extract_protocol(readname, savename, time_strs, selected_wells):
         # Save 'before drug' trace as .csv
         for sweep in range(nsweeps_before):
             out = before_trace.get_trace_sweeps([sweep])[well][0]
-            save_fname = os.path.join(savedir, f"{saveID}-{savename}-"
+            save_fname = os.path.join(traces_dir, f"{saveID}-{savename}-"
                                       f"{well}-before-sweep{sweep}")
 
             np.savetxt(save_fname, out, delimiter=',',
@@ -414,7 +418,7 @@ def extract_protocol(readname, savename, time_strs, selected_wells):
 
         # Save 'after drug' trace as .csv
         for sweep in range(nsweeps_after):
-            save_fname = os.path.join(savedir, f"{saveID}-{savename}-"
+            save_fname = os.path.join(traces_dir, f"{saveID}-{savename}-"
                                       f"{well}-after-sweep{sweep}")
             out = after_trace.get_trace_sweeps([sweep])[well][0]
             if len(out) > 0:
@@ -433,12 +437,12 @@ def extract_protocol(readname, savename, time_strs, selected_wells):
                                          voltage.flatten())).T,
                               columns=['time', 'voltage'])
 
-    if not os.path.exists(os.path.join(savedir,
+    if not os.path.exists(os.path.join(traces_dir,
                                        f"{saveID}-{savename}-voltages.csv")):
-        voltage_df.to_csv(os.path.join(savedir,
+        voltage_df.to_csv(os.path.join(traces_dir,
                                        f"{saveID}-{savename}-voltages.csv"))
 
-    np.savetxt(os.path.join(savedir, f"{saveID}-{savename}-times.txt"),
+    np.savetxt(os.path.join(traces_dir, f"{saveID}-{savename}-times.txt"),
                times_before)
 
     # plot subtraction

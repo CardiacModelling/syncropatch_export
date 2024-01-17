@@ -87,9 +87,11 @@ def get_leak_corrected(trace: Trace, ramp_bounds, QC_dict=None):
 
     V = trace.get_voltage()
 
+    nobs = V.shape[0]
+
     for row in trace.WELL_ID:
         for well in row:
-            leak_corrected[well] = []
+            leak_corrected[well] = np.full((trace.NofSweeps, nobs), np.nan)
             for sweep in range(trace.NofSweeps):
 
                 if QC_dict:
@@ -103,10 +105,7 @@ def get_leak_corrected(trace: Trace, ramp_bounds, QC_dict=None):
                     V[ramp_bounds[0]:ramp_bounds[1]+1],
                     I_obs[ramp_bounds[0]:ramp_bounds[1]+1])
                 I_leak = b_1*V + b_0
-                leak_corrected[well][sweep] = I_obs - I_leak
-
-            if leak_corrected[well]:
-                leak_corrected[well] = np.vstack(leak_corrected[well])
+                leak_corrected[well][sweep, :] = I_obs - I_leak
 
     return leak_corrected
 
