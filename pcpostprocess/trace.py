@@ -95,66 +95,7 @@ class Trace:
 
         TODO: Rename. Detect 'leakcorrect' flag automatically
         '''
-
-        # initialise output
-        OUT = {}
-        for iCol in self.WELL_ID:
-            for ijWell in iCol:
-                OUT[ijWell] = []
-
-        currentSweep = 0
-        for trace_file in self.FileList:
-            # work out the total number of sweeps in the current trace file
-            if currentSweep + self.SweepsPerFile > self.NofSweeps:
-                totalSweep = self.NofSweeps - currentSweep
-            else:
-                totalSweep = self.SweepsPerFile
-            currentSweep += self.SweepsPerFile
-            assert totalSweep > 0
-
-            # get trace data
-            with open(os.path.join(self.filepath, trace_file), 'r') as f:
-                trace = np.fromfile(f, dtype=np.int16)
-
-            # convert to numpy array
-            trace = np.asarray(trace)
-
-            # check loaded traces have the expected length
-            # assert len(trace) == self.Leakdata * self.NofSamples \
-            #     * self.WP_nRows * self.nCols * totalSweep
-            # idx_i = 0
-
-            # loop through sweeps and columns
-            for kSweep in range(totalSweep):
-                for i, iCol in enumerate(self.ColsMeasured):
-                    if iCol == -1:
-                        # -1 not measured (TODO doublecheck this)
-                        continue
-
-                    idx_f = idx_i + self.Leakdata * \
-                        self.NofSamples * self.WP_nRows
-                    assert idx_f <= len(trace)
-
-                    # convert to double in pA
-                    iColTraces = np.array(
-                        trace[idx_i:idx_f]) * self.I2DScale[i] * 1e12
-
-                    iColWells = self.WELL_ID[i]
-                    for j, ijWell in enumerate(iColWells):
-                        if leakcorrect:
-                            leakoffset = 1
-                        else:
-                            leakoffset = 0
-                        start = j * self.Leakdata * self.NofSamples \
-                            + leakoffset * self.NofSamples
-                        end = j * self.Leakdata * self.NofSamples \
-                            + (leakoffset + 1) * self.NofSamples
-                        OUT[ijWell].append(iColTraces[start:end])
-                    del iColTraces
-                    # update idx_i
-                    idx_i = idx_f
-            del trace
-        return OUT
+        return self.get_trace_sweeps(leakcorrect=leakcorrect)
 
     def get_trace_file(self, sweeps):
         '''

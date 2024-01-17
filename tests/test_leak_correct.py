@@ -44,10 +44,9 @@ class TestLeakCorrect(unittest.TestCase):
 
         # test getting leak corrected data
         _ = leak_correct.get_leak_corrected(
-            trace, currents, QC_filt, self.ramp_bounds)
+            trace, self.ramp_bounds, QC_filt)
 
-        return leak_correct.get_leak_corrected(trace, currents, QC_filt,
-                                               self.ramp_bounds)
+        return leak_correct.get_leak_corrected(trace, currents, QC_filt)
 
 
 if __name__ == "__main__":
