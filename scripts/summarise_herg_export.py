@@ -682,7 +682,11 @@ def overlay_reversal_plots(leak_parameters_df):
             if protocol == np.nan:
                 continue
             for sweep in sweeps_to_plot:
-                protocol_func, _, protocol_desc = markovmodels.voltage_protocols.get_ramp_protocol_from_csv(protocol)
+                voltage_fname = os.path.join(data_dir, f"{experiment_name}-{protocol}-voltages.csv")
+                voltages = np.loadtxt(voltage_fname).flatten()
+
+                protocol = VoltageProtocol.from_voltage_trace(voltages)
+
                 fname = f"{experiment_name}-{protocol}-{well}-sweep{sweep}.csv"
                 try:
                     data = pd.read_csv(os.path.join(args.data_dir, 'subtracted_traces', fname))
@@ -691,9 +695,11 @@ def overlay_reversal_plots(leak_parameters_df):
 
                 times = data['time'].values.astype(np.float64)
 
-                # First, find the reversal ramp. Search backwards along the protocol until we find a >= 40mV step
-                step = next(filter(lambda x: x[2] >= -74, reversed(protocol_desc)))
-                step = step[0:2]
+                # First, find the reversal ramp
+
+                ramps = protocol.get_ramps()
+                reversal_ramp = ramps[-1]
+                ramp_start, ramp_end = reversal_ramp[:2]
 
                 # Next extract steps
                 istart = np.argmax(times >= step[0])
@@ -704,8 +710,6 @@ def overlay_reversal_plots(leak_parameters_df):
 
                 # Plot voltage vs current
                 current = data['current'].values.astype(np.float64)
-
-                voltages = np.array([protocol_func(t) for t in times])
 
                 col = palette[i]
 

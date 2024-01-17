@@ -612,7 +612,7 @@ def extract_protocol(readname, savename, time_strs, selected_wells):
         axs = protocol_axs + before_axs + after_axs + corrected_axs + \
             [subtracted_ax, long_protocol_ax]
 
-        times = times * 1e-3
+        times = before_trace.get_times() * 1e-3
 
         for ax in protocol_axs:
             ax.plot(times, voltages, color='black')
