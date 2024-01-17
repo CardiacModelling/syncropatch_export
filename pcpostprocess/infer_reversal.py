@@ -10,7 +10,7 @@ from .trace import Trace
 
 def infer_reversal_potential(trace: Trace, sweep: int, well: str, ax=None,
                              output_path=None, plot=None, known_Erev=None,
-                             current=None, figsize=(5,3)):
+                             current=None, figsize=(5, 3)):
 
     if output_path:
         dirname = os.path.dirname(output_path)

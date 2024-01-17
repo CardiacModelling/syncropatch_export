@@ -26,7 +26,6 @@ class hERGQC(object):
 
         self.voltage = np.array(voltage)
 
-
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(logging.DEBUG)
 

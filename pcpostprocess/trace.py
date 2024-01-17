@@ -187,7 +187,7 @@ class Trace:
                 out_dict[ijWell] = []
 
         if sweeps is None:
-            # Sometimes NofSweeps seems to be incorrect
+            #  Sometimes NofSweeps seems to be incorrect
             sweeps = list(range(self.NofSweeps))
 
         # check `getsweep` input is something sensible
@@ -220,10 +220,10 @@ class Trace:
             #     * self.WP_nRows * self.nCols * totalSweep
 
             if len(trace) == 0:
-                trace = np.full(self.Leakdata * self.NofSamples * self.WP_nRows \
+                trace = np.full(self.Leakdata * self.NofSamples * self.WP_nRows
                                 * self.nCols * totalSweep, np.nan)
 
-            # Iterate over wells
+            #  Iterate over wells
             for i, iCol in enumerate(self.ColsMeasured):
                 if iCol == -1:
                     continue  # -1 not measured (need to doublecheck this)
@@ -295,7 +295,6 @@ class Trace:
 
         return out_dict
 
-
     def get_onboard_QC_dict(self, sweeps=None):
         QC_dict = self.get_onboard_QC_values(sweeps)
 
@@ -307,7 +306,7 @@ class Trace:
             for well in self.WELL_ID.values():
                 if well <= len(out_dict[well]):
                     continue
-                Rseal, Capacitance, Rseries =out_dict[well][sweep]
+                Rseal, Capacitance, Rseries = out_dict[well][sweep]
                 df_row = {'Rseal': Rseal,
                           'Cm': Capacitance,
                           'Rseries': Rseries,

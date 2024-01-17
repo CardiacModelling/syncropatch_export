@@ -54,11 +54,13 @@ def get_QC_dict(QC, bounds={'Rseal': (10e8, 10e12), 'Cm': (1e-12, 1e-10),
             QC_dict.pop(well)
     return QC_dict
 
+
 def detect_ramp_bounds(trace, voltage_protocol):
     t = trace.get_times()
     tstart, tend = voltage_protocol.get_ramps()[0][:2]
     ramp_bounds = [np.argmax(t > tstart), np.argmax(t > tend)]
     return ramp_bounds
+
 
 def get_leak_corrected(trace, ramp_bounds):
     """ Leak correct all data in a trace
