@@ -85,8 +85,6 @@ To get a local copy up and running follow these simple example steps.
 
 This package has been tested on Ubuntu with Python3.7 Python3.8 Python3.9 Python3.10 and Python3.11.
 
-F
-
 ### Installation
 
 irst clone this repository
