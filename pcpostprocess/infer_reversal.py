@@ -10,7 +10,7 @@ from .trace import Trace
 
 def infer_reversal_potential(trace: Trace, sweep: int, well: str, ax=None,
                              output_path=None, plot=None, known_Erev=None,
-                             current=None):
+                             current=None, figsize=(5, 3)):
 
     if output_path:
         dirname = os.path.dirname(output_path)
@@ -36,10 +36,6 @@ def infer_reversal_potential(trace: Trace, sweep: int, well: str, ax=None,
 
     istart = np.argmax(times > tstart)
     iend = np.argmax(times > tend)
-
-    # print(tstart, tend)
-    # print(istart, iend)
-    # print(times)
 
     if current is None:
         current = trace.get_trace_sweeps([sweep])[well][0, :].flatten()
@@ -73,16 +69,18 @@ def infer_reversal_potential(trace: Trace, sweep: int, well: str, ax=None,
         if ax is None and output_path is not None:
 
             created_fig = True
-            fig = plt.figure()
+            fig = plt.figure(figsize=figsize)
             ax = fig.subplots()
 
-        ax.set_xlabel('voltage mV')
-        ax.set_ylabel('current nA')
+        ax.set_xlabel('$V$ (mV)')
+        ax.set_ylabel('$I$ (nA)')
+
         # Now plot current vs voltage
         ax.plot(voltages, current, 'x', markersize=2, color='grey', alpha=.5)
-        ax.axvline(roots[-1], linestyle='--', color='grey', label="$E_{Kr}$")
+        ax.axvline(roots[-1], linestyle='--', color='grey', label="$E_text{obs}$")
         if known_Erev:
-            ax.axvline(known_Erev, linestyle='--', color='yellow', label="known $E_{Kr}$")
+            ax.axvline(known_Erev, linestyle='--', color='orange',
+                       label="Calculated $E_{Kr}$")
         ax.axhline(0, linestyle='--', color='grey')
         ax.plot(*fitted_poly.linspace())
         ax.legend()

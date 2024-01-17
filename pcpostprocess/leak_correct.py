@@ -32,20 +32,23 @@ def get_QC_dict(QC, bounds={'Rseal': (10e8, 10e12), 'Cm': (1e-12, 1e-10),
     @params:
     QC: QC trace attribute extracted from the JSON file
     bounds: A dictionary of bound tuples, (lower, upper), for each QC variable
+
+    @returns:
+    A dictionary where the keys are wells and the values are sweeps that passed QC
     '''
 
     QC_dict = {}
     for well in QC:
-        for qc in QC[well]:
-            if all(qc):
-                if bounds['Rseal'][0] < qc[0] < bounds['Rseal'][1] and \
-                   bounds['Cm'][0] < qc[1] < bounds['Cm'][1] and \
-                   bounds['Rseries'][0] < qc[2] < bounds['Rseries'][1]:
+        for sweep in QC[well]:
+            if all(sweep):
+                if bounds['Rseal'][0] < sweep[0] < bounds['Rseal'][1] and \
+                   bounds['Cm'][0] < sweep[1] < bounds['Cm'][1] and \
+                   bounds['Rseries'][0] < sweep[2] < bounds['Rseries'][1]:
 
                     if well in QC_dict:
-                        QC_dict[well] = QC_dict[well] + [qc]
+                        QC_dict[well] = QC_dict[well] + [sweep]
                     else:
-                        QC_dict[well] = [qc]
+                        QC_dict[well] = [sweep]
 
     max_swp = max(len(QC_dict[well]) for well in QC_dict)
     QC_copy = QC_dict.copy()
@@ -55,20 +58,56 @@ def get_QC_dict(QC, bounds={'Rseal': (10e8, 10e12), 'Cm': (1e-12, 1e-10),
     return QC_dict
 
 
-def get_leak_corrected(trace, currents, QC_filt, ramp_bounds):
+def detect_ramp_bounds(trace, voltage_protocol):
+    t = trace.get_times()
+    tstart, tend = voltage_protocol.get_ramps()[0][:2]
+    ramp_bounds = [np.argmax(t > tstart), np.argmax(t > tend)]
+    return ramp_bounds
+
+
+def get_leak_corrected(trace: Trace, ramp_bounds, QC_dict=None):
+    """Leak correct all data in a trace
+
+    @Params:
+    trace: the Trace instance to leak correct
+
+    ramp_bounds: an tuple of two floats describing the start and end of the leak ramp
+
+    QC_dict: an optional dictionary of the same format outputted by get_QC_dict
+    for filtering which wells and sweeps are outputted
+
+
+    @Returns: A dictionary where the key is the well and the value is a
+    leak-corrected trace
+
+    """
+
     leak_corrected = {}
-    V = 1000*np.array(currents['voltages'])  # mV
+    currents = trace.get_trace_sweeps()
+
+    V = trace.get_voltage()
+
     for row in trace.WELL_ID:
         for well in row:
-            if well in QC_filt.keys():
-                leak_corrected[well] = {}
-                for sweep in range(trace.NofSweeps):
-                    I_obs = currents[well][sweep]  # pA
-                    b_0, b_1 = linear_reg(
-                        V[ramp_bounds[0]:ramp_bounds[1]+1],
-                        I_obs[ramp_bounds[0]:ramp_bounds[1]+1])
-                    I_leak = b_1*V + b_0
-                    leak_corrected[well][sweep] = I_obs - I_leak
+            leak_corrected[well] = []
+            for sweep in range(trace.NofSweeps):
+
+                if QC_dict:
+                    if well not in QC_dict:
+                        continue
+                    if sweep not in QC_dict[well]:
+                        continue
+
+                I_obs = currents[well][sweep]  # pA
+                b_0, b_1 = linear_reg(
+                    V[ramp_bounds[0]:ramp_bounds[1]+1],
+                    I_obs[ramp_bounds[0]:ramp_bounds[1]+1])
+                I_leak = b_1*V + b_0
+                leak_corrected[well][sweep] = I_obs - I_leak
+
+            if leak_corrected[well]:
+                leak_corrected[well] = np.vstack(leak_corrected[well])
+
     return leak_corrected
 
 
