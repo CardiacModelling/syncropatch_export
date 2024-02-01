@@ -16,13 +16,15 @@ class hERGQC(object):
                'qc6.subtracted', 'qc6.1.subtracted', 'qc6.2.subtracted']
 
     def __init__(self, sampling_rate=5, plot_dir=None, voltage=np.array([]),
-                 n_sweeps=None):
+                 n_sweeps=None, removal_time=2):
         # TODO docstring
 
         if plot_dir is not None:
             self.plot_dir = plot_dir
 
         self._n_qc = 16
+
+        self.removal_time = removal_time
 
         self.voltage = np.array(voltage)
 
@@ -96,7 +98,8 @@ class hERGQC(object):
     def set_debug(self, debug):
         self._debug = debug
 
-    def run_qc(self, before=None, after=None, qc_vals_before=None,
+    def run_qc(self, voltage_protocol, times,
+               before=None, after=None, qc_vals_before=None,
                qc_vals_after=None, n_sweeps=None):
         """Run each QC criteria on a single (before-trace, after-trace) pair.
 
@@ -113,11 +116,12 @@ class hERGQC(object):
         if after is None:
             after = self.after
 
+        voltage_steps = voltage_protocol.get_all_sections()
         before = np.array(before)
         after = np.array(after)
 
-        times = np.linspace(0, before.shape[1]/self.sampling_rate,
-                            before.shape[1])
+        before = self.filter_capacitive_spikes(before, times, voltage_steps)
+        after = self.filter_capacitive_spikes(after, times, voltage_steps)
 
         if len(before) == 0 or len(after) == 0:
             return False, [False for lab in self.qc_labels]
@@ -151,7 +155,7 @@ class hERGQC(object):
         rseriess = [qc_vals_before[2], qc_vals_after[2]]
         qc4 = self.qc4(rseals, cms, rseriess)
 
-        # indices where hERG peaks!
+        # indices where hERG peaks
         qc5 = self.qc5(before[0, :], after[0, :],
                        self.qc5_win)
 
@@ -168,12 +172,14 @@ class hERGQC(object):
             np.abs(self.voltage[self.qc6_2_win[0]: self.qc6_2_win[1]] - 40.0))\
             < 1e-8
 
-        qc6 = self.qc6((before[0, :] - after[0, :]),
-                       self.qc6_win, label='0')
-        qc6_1 = self.qc6((before[0, :] - after[0, :]),
-                         self.qc6_1_win, label='1')
-        qc6_2 = self.qc6((before[0, :] - after[0, :]),
-                         self.qc6_2_win, label='2')
+        qc6, qc6_1, qc6_2 = True, True, True
+        for i in range(before.shape[0]):
+            qc6 = qc6 and self.qc6((before[i, :] - after[i, :]),
+                                  self.qc6_win, label='0')
+            qc6_1 = qc6_1 and self.qc6((before[i, :] - after[i, :]),
+                                       self.qc6_1_win, label='1')
+            qc6_2 = qc6_2 and self.qc6((before[i, :] - after[i, :]),
+                                       self.qc6_2_win, label='2')
 
         if self._debug:
             fig = plt.figure(figsize=(8, 5))
@@ -242,9 +248,11 @@ class hERGQC(object):
         elif method == 3:
             noise = np.std(recording[:200])
             snr = (np.std(recording) / noise) ** 2
+
         if snr < self.snrc or not np.isfinite(snr):
             self.logger.debug(f"snr: {snr}")
             return False
+
         return True
 
     def qc3(self, recording1, recording2, method=3):
@@ -278,25 +286,25 @@ class hERGQC(object):
 
         # Check R_seal, C_m, R_series stability
         # Require std/mean < x%
+        qc41 = True
+        qc42 = True
+        qc43 = True
         if np.std(rseals) / np.mean(rseals) > self.rsealsc or not (
                 np.isfinite(np.mean(rseals)) and np.isfinite(np.std(rseals))):
             self.logger.debug(f"d_rseal:  {np.std(rseals) / np.mean(rseals)}")
             qc41 = False
-        else:
-            qc41 = True
+
         if np.std(cms) / np.mean(cms) > self.cmsc or not (
                 np.isfinite(np.mean(cms)) and np.isfinite(np.std(cms))):
             self.logger.debug(f"d_cm: {np.std(cms) / np.mean(cms)}")
             qc42 = False
-        else:
-            qc42 = True
+
         if np.std(rseriess) / np.mean(rseriess) > self.rseriessc or not (
                 np.isfinite(np.mean(rseriess))
                 and np.isfinite(np.std(rseriess))):
             self.logger.debug(f"d_rseries: {np.std(rseriess) / np.mean(rseriess)}")
             qc43 = False
-        else:
-            qc43 = True
+
         return [qc41, qc42, qc43]
 
     def qc5(self, recording1, recording2, win=None, label=''):
@@ -341,11 +349,11 @@ class hERGQC(object):
             fig.savefig(os.path.join(self.plot_dir, f"qc5_{label}"))
             plt.close(fig)
 
-        rmsd0_diff = np.sqrt(np.mean((recording1[i:f]) ** 2)) \
-            - np.sqrt(np.mean((recording2[i:f]) ** 2))
+        rmsd0_diff = np.sqrt(np.mean(recording1[i:f] ** 2)) \
+            - np.sqrt(np.mean(recording2[i:f] ** 2))
 
         rmsd0_diffc = self.rmsd0_diffc *\
-            np.sqrt(np.mean((recording1[i:f]) ** 2))
+            np.sqrt(np.mean(recording1[i:f] ** 2))
 
         if (rmsd0_diff < rmsd0_diffc) or not (np.isfinite(rmsd0_diff)
                                               and np.isfinite(rmsd0_diffc)):
@@ -374,3 +382,16 @@ class hERGQC(object):
             self.logger.debug(f"qc6_{label} val:  {val}, valc: {valc}")
             return False
         return True
+
+    def filter_capacitive_spikes(self, current, times, voltage_steps):
+        for tstart, tend, vstart, vend in voltage_steps[1:-1]:
+            if vstart==vend:
+                win_end = tstart + self.removal_time
+                i_start = np.argmax(times >= tstart)
+                i_end   = np.argmax(times > win_end)
+
+                if i_end == 0:
+                    break
+
+                current[i_start:i_end] = 0
+        return current

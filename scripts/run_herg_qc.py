@@ -11,6 +11,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import regex as re
+import datetime
+import subprocess
+
 from matplotlib.gridspec import GridSpec
 
 from pcpostprocess.hergQC import hERGQC
@@ -23,6 +26,8 @@ matplotlib.rc('font', size='9')
 
 pool_kws = {'maxtasksperchild': 1}
 
+def get_git_revision_hash() -> str:
+    return subprocess.check_output(['git', 'rev-parse', 'HEAD']).decode('ascii').strip()
 
 def main():
     parser = argparse.ArgumentParser()
@@ -52,6 +57,14 @@ def main():
         if not os.path.exists(args.output_dir):
             os.makedirs(args.output_dir)
 
+    with open(os.path.join(args.output_dir, 'info.txt'), 'w') as description_fout:
+        git_hash = get_git_revision_hash()
+        datetimestr = str(datetime.datetime.now())
+        description_fout.write(f"Date: {datetimestr}\n")
+        description_fout.write(f"Commit {git_hash}\n")
+        command = " ".join(sys.argv)
+        description_fout.write(f"Command: {command}\n")
+
     spec = importlib.util.spec_from_file_location(
         'export_config',
         os.path.join(args.data_directory,
@@ -70,6 +83,8 @@ def main():
     export_config = importlib.util.module_from_spec(spec)
     sys.modules['export_config'] = export_config
     spec.loader.exec_module(export_config)
+
+    export_config.savedir = args.output_dir
 
     protocols_regex = \
         r'([a-z|A-Z|_|0-9| |\(|\)]+)_([0-9][0-9]\.[0-9][0-9]\.[0-9][0-9])'
@@ -149,7 +164,7 @@ def main():
 
     qc_df['qc3.bookend'] = [qc3_bookend_dict[well] for well in qc_df.well]
 
-    savedir = os.path.join(args.output_dir, export_config.savedir)
+    savedir = args.output_dir
     saveID = export_config.saveID
 
     if not os.path.exists(os.path.join(args.output_dir, savedir)):
@@ -291,6 +306,15 @@ def main():
     extract_df['QC.Erev.spread'] = [qc_erev_spread[well] for well in extract_df.well]
     extract_df['Erev_spread'] = [erev_spreads[well] for well in extract_df.well]
 
+    chrono_dict = {times[0]: prot for prot, times in zip(savenames, times_list)}
+
+    with open(os.path.join(args.output_dir, 'chrono.txt'), 'w') as fout:
+        for key in sorted(chrono_dict):
+            val = chrono_dict[key]
+            # Output order of protocols
+            fout.write(val)
+            fout.write('\n')
+
     #  Update qc_df
     update_cols = []
     for index, vals in qc_df.iterrows():
@@ -316,7 +340,7 @@ def main():
 
         update_cols.append(append_dict)
 
-    for key, val in append_dict.items():
+    for key in append_dict:
         qc_df[key] = [row[key] for row in update_cols]
 
     # Save in csv format
@@ -342,13 +366,16 @@ def main():
 
 def extract_protocol(readname, savename, time_strs, selected_wells):
     logger.info(f"extracting {savename}")
-    savedir = os.path.join(args.output_dir, export_config.savedir)
+    savedir = args.output_dir
 
     saveID = export_config.saveID
     traces_dir = os.path.join(savedir, 'traces')
 
     if not os.path.exists(traces_dir):
-        os.makedirs(traces_dir)
+        try:
+            os.makedirs(traces_dir)
+        except FileExistsError:
+            pass
 
     row_dict = {}
 
@@ -372,7 +399,13 @@ def extract_protocol(readname, savename, time_strs, selected_wells):
 
     voltage_protocol = before_trace.get_voltage_protocol()
     t = before_trace.get_times()
-    tstart, tend = voltage_protocol.get_ramps()[0][:2]
+
+    # Find start of leak section
+    desc = voltage_protocol.get_all_sections()
+    ramp_locs = np.argwhere(desc[:, 2] != desc[:, 3]).flatten()
+    tstart = desc[ramp_locs[0], 0]
+    tend = voltage_protocol.get_ramps()[0][1]
+
     ramp_bounds = [np.argmax(t > tstart), np.argmax(t > tend)]
 
     nsweeps_before = before_trace.NofSweeps = 2
@@ -442,7 +475,7 @@ def extract_protocol(readname, savename, time_strs, selected_wells):
         voltage_df.to_csv(os.path.join(traces_dir,
                                        f"{saveID}-{savename}-voltages.csv"))
 
-    np.savetxt(os.path.join(traces_dir, f"{saveID}-{savename}-times.txt"),
+    np.savetxt(os.path.join(traces_dir, f"{saveID}-{savename}-times.csv"),
                times_before)
 
     # plot subtraction
@@ -496,7 +529,7 @@ def extract_protocol(readname, savename, time_strs, selected_wells):
             row_dict['gleak_before'] = before_params[1]
             row_dict['E_leak_before'] = -before_params[0] / before_params[1]
 
-            after_params, after_leak = fit_linear_leak(before_trace,
+            after_params, after_leak = fit_linear_leak(after_trace,
                                                        well, sweep,
                                                        ramp_bounds,
                                                        plot=True,
@@ -553,7 +586,14 @@ def extract_protocol(readname, savename, time_strs, selected_wells):
                             plot_dir=plot_dir,
                             n_sweeps=before_trace.NofSweeps)
 
-            row_dict['QC6'] = hergqc.qc6(subtracted_trace,
+            times = before_trace.get_times()
+            voltage_protocol = before_trace.get_voltage_protocol()
+            voltage_steps = voltage_protocol.get_all_sections()
+
+            current = hergqc.filter_capacitive_spikes(before_corrected - after_corrected,
+                                                      times, voltage_steps)
+
+            row_dict['QC6'] = hergqc.qc6(current,
                                          win=hergqc.qc6_win,
                                          label='0')
 
@@ -719,7 +759,7 @@ def run_qc_for_protocol(readname, savename, time_strs):
     # Convert to s
     sampling_rate = before_trace.sampling_rate
 
-    savedir = os.path.join(args.output_dir, export_config.savedir)
+    savedir = args.output_dir
     if not os.path.exists(savedir):
         os.makedirs(savedir)
 
@@ -770,8 +810,12 @@ def run_qc_for_protocol(readname, savename, time_strs):
         voltage_protocol = VoltageProtocol.from_voltage_trace(voltage,
                                                               before_trace.get_times())
 
-        # Get first ramp
-        tstart, tend = voltage_protocol.get_ramps()[0][:2]
+        # Find start of leak section
+        desc = voltage_protocol.get_all_sections()
+        ramp_locs = np.argwhere(desc[:, 2] != desc[:, 3]).flatten()
+        tstart = desc[ramp_locs[0], 0]
+        tend = voltage_protocol.get_ramps()[0][1]
+
         t = before_trace.get_times()
 
         ramp_bounds = [np.argmax(t > tstart), np.argmax(t > tend)]
@@ -802,7 +846,8 @@ def run_qc_for_protocol(readname, savename, time_strs):
         logger.info(f"sampling_rate is {sampling_rate}")
 
         # Run QC with leak subtracted currents
-        selected, QC = hergqc.run_qc(before_currents,
+        selected, QC = hergqc.run_qc(voltage_protocol, t,
+                                     before_currents,
                                      after_currents,
                                      np.array(qc_before[well])[0, :],
                                      np.array(qc_after[well])[0, :],
@@ -902,7 +947,10 @@ def qc3_bookend(readname, savename, time_strs):
 
     assert np.all(first_before_trace.get_voltage() == last_before_trace.get_voltage())
 
+    times = first_before_trace.get_times()
     voltage = first_before_trace.get_voltage()
+    voltage_protocol = VoltageProtocol.from_voltage_trace(voltage, times)
+    voltage_steps = voltage_protocol.get_all_sections()
 
     hergqc = hERGQC(sampling_rate=first_before_trace.sampling_rate,
                     plot_dir=plot_dir,
@@ -910,12 +958,18 @@ def qc3_bookend(readname, savename, time_strs):
 
     assert first_before_trace.NofSweeps == last_before_trace.NofSweeps
 
-    # first_trace_sweeps = first_before_trace.get_trace_sweeps()
-    # last_trace_sweeps = last_before_trace.get_trace_sweeps()
     res_dict = {}
     for well in args.wells:
-        passed = hergqc.qc3(first_processed[well][0, :],
-                            last_processed[well][-1, :])
+        trace1 = hergqc.filter_capacitive_spikes(
+            first_processed[well][0, :], times, voltage_steps
+        )
+
+        trace2 = hergqc.filter_capacitive_spikes(
+            last_processed[well][-1, :], times, voltage_steps
+        )
+
+        passed = hergqc.qc3(trace1, trace2)
+
         res_dict[well] = passed
 
     return res_dict
