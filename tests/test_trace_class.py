@@ -25,7 +25,7 @@ class TestTraceClass(unittest.TestCase):
             os.makedirs(self.output_dir)
         self.test_trace = tr(filepath, json_file)
 
-    def test_protocol(self):
+    def test_protocol_descriptions(self):
         voltages = self.test_trace.get_voltage()
         times = self.test_trace.get_times()
 
@@ -40,6 +40,25 @@ class TestTraceClass(unittest.TestCase):
 
         self.assertLess(t_error, 1e-2)
         self.assertLess(v_error, 1e-4)
+
+    def test_protocol_timeseries(self):
+        voltages = self.test_trace.get_voltage()
+        times = self.test_trace.get_times()
+
+        protocol_desc = self.test_trace.get_voltage_protocol()
+
+        def voltage_func(t):
+            for tstart, tend, vstart, vend in protocol_desc.get_all_sections():
+                if t >= tstart and t < tend:
+                    if vstart != vend:
+                        return vstart + (vend - vstart) * (t - tstart)/(tend - tstart)
+                    else:
+                        return vstart
+
+            return vend
+
+        for t, v in zip(times, voltages):
+            self.assertLess(voltage_func(t) - v, 1e-3)
 
     def test_get_traces(self):
         tr = self.test_trace

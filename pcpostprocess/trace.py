@@ -237,7 +237,15 @@ class Trace:
 
         return out_dict
 
-    def get_onboard_QC_dict(self, sweeps=None):
+    def get_onboard_QC_df(self, sweeps=None):
+        """Create a Pandas DataFrame which lists the Rseries, memebrane
+        capacitance and Rseries for each well and sweep.
+
+        @Returns A pandas.DataFrame describing the onboard QC estimates for
+        each well, sweep
+
+        """
+
         QC_dict = self.get_onboard_QC_values(sweeps)
 
         if sweeps is None:
@@ -253,6 +261,7 @@ class Trace:
                           'Cm': Capacitance,
                           'Rseries': Rseries,
                           'well': well,
+                          'sweep': sweep
                           }
                 df_rows.append(df_row)
 

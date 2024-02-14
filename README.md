@@ -22,13 +22,13 @@
 
 
 <!-- PROJECT LOGO -->
-<br />
-<div align="center">
-  <a href="https://github.com/CardiacModelling/pcpostprocess">
-    <img src="images/logo.png" alt="Logo" width="80" height="80">
-  </a>
+<!-- <br /> -->
+<!-- <div align="center"> -->
+<!--   <a href="https://github.com/CardiacModelling/pcpostprocess"> -->
+<!--     <img src="images/logo.png" alt="Logo" width="80" height="80"> -->
+<!--   </a> -->
 
-<h3 align="center">pcpostprocess</h3>
+<!-- <h3 align="center">pcpostprocess</h3> -->
 
 
 <!-- TABLE OF CONTENTS -->
@@ -71,18 +71,6 @@ This project contains a python package and scripts for extracting data from high
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
-
-### Built With
-
-* [![Next][Next.js]][Next-url]
-* [![React][React.js]][React-url]
-* [![Vue][Vue.js]][Vue-url]
-* [![Angular][Angular.io]][Angular-url]
-* [![Svelte][Svelte.dev]][Svelte-url]
-* [![Laravel][Laravel.com]][Laravel-url]
-* [![Bootstrap][Bootstrap.com]][Bootstrap-url]
-* [![JQuery][JQuery.com]][JQuery-url]
-
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
@@ -96,8 +84,6 @@ To get a local copy up and running follow these simple example steps.
 ### Prerequisites
 
 This package has been tested on Ubuntu with Python3.7 Python3.8 Python3.9 Python3.10 and Python3.11.
-
-F
 
 ### Installation
 
@@ -128,12 +114,7 @@ python3 -m unittest
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-Use this space to show useful examples of how a project can be used. Additional screenshots, code examples and demos work well in this space. You may also link to more resources.
-
-_For more examples, please refer to the [Documentation](https://example.com)_
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
+TODO
 
 <!-- CONTRIBUTING -->
 ## Contributing
