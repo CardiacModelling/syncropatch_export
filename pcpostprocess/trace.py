@@ -246,7 +246,6 @@ class Trace:
 
         """
 
-
         QC_dict = self.get_onboard_QC_values(sweeps)
 
         if sweeps is None:

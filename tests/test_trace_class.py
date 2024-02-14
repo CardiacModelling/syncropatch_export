@@ -60,7 +60,6 @@ class TestTraceClass(unittest.TestCase):
         for t, v in zip(times, voltages):
             self.assertLess(voltage_func(t) - v, 1e-3)
 
-
     def test_get_traces(self):
         tr = self.test_trace
         v = tr.get_voltage()
