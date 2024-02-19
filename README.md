@@ -114,11 +114,6 @@ Then you can run the tests.
 python3 -m unittest
 ```
 
-<!-- USAGE EXAMPLES -->
-## Usage
-
-TODO
-
 <!-- CONTRIBUTING -->
 ## Contributing
 
@@ -149,15 +144,6 @@ Joseph Shuttleworth joseph.shuttleworth@nottingham.ac.uk
 Project Link: [https://github.com/CardiacModelling/syncropatch\_export](https://github.com/CardiacModelling/syncropatch_export)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-
-<!-- ACKNOWLEDGMENTS -->
-## Acknowledgments
-
-* []()
-* []()
-* []()
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
