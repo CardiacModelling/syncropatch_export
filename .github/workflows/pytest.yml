@@ -40,7 +40,7 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
     - name: Lint with flake8
       run: |
-        python -m flake8 pcpostprocess/*.py tests/*.py
+        python -m flake8 syncropatch_export/*.py tests/*.py
     - name: Import sorting with isort
       run: |
-        python -m isort --verbose --check-only --diff pcpostprocess tests setup.py
+        python -m isort --verbose --check-only --diff syncropatch_export tests setup.py
