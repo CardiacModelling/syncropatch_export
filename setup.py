@@ -9,10 +9,13 @@ with open('README.md') as f:
 #     version = f.read()
 
 # Go!
+
+version = '0.0.1'
+
 setup(
     # Module name (lowercase)
-    name='pcpostprocess',
-    # version=version,
+    name='syncropatch_export',
+    version=version,
     description='Post-process high-throughput patch-clamp data',
     long_description=readme,
     long_description_content_type="text/markdown",
@@ -29,7 +32,7 @@ setup(
 
     # Packages to include
     packages=find_packages(
-        include=('pcpostprocess', 'pcpostprocess.*')),
+        include=('syncropatch_export', 'syncropatch_export.*')),
 
     # Include non-python files (via MANIFEST.in)
     include_package_data=True,

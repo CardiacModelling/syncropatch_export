@@ -6,11 +6,8 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-from pcpostprocess.trace import Trace as tr
-from pcpostprocess.voltage_protocols import VoltageProtocol
-
-p = Path(__file__).parents[1]
-sys.path.insert(0, str(p))
+from syncropatch_export.trace import Trace as tr
+from syncropatch_export.voltage_protocols import VoltageProtocol
 
 
 class TestTraceClass(unittest.TestCase):

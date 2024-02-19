@@ -1,3 +1,21 @@
+Metadata-Version: 2.1
+Name: syncropatch-export
+Version: 0.0.1
+Summary: Post-process high-throughput patch-clamp data
+Home-page: UNKNOWN
+Author: Frankie Patten-Elliot, Joseph Shuttleworth, Chon Lok Lei
+Author-email: joseph.shuttleworth@nottingham.ac.uk
+Maintainer: Joseph Shuttleworth
+Maintainer-email: joseph.shuttleworth@nottingham.ac.uk
+License: UNKNOWN
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.7
+Description-Content-Type: text/markdown
+Provides-Extra: test
+
 
 <!-- Improved compatibility of back to top link: See: https://github.com/othneildrew/Best-README-Template/pull/73 -->
 <a name="readme-top"></a>
@@ -188,3 +206,5 @@ Project Link: [https://github.com/CardiacModelling/syncropatch\_export](https://
 [Bootstrap-url]: https://getbootstrap.com
 [JQuery.com]: https://img.shields.io/badge/jQuery-0769AD?style=for-the-badge&logo=jquery&logoColor=white
 [JQuery-url]: https://jquery.com 
+
+
