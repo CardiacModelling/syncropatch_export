@@ -102,8 +102,14 @@ Then install the package with `pip`.
 python3 -m pip --upgrade pip && python3 -m pip install -e .[test]
 ```
 
-You can then run the tests using `unittest`.
+To run the tests you must first download some test data. Test data is available at [cardiac.nottingham.ac.uk/syncropatch\_export](https://cardiac.nottingham.ac.uk/syncropatch_export)
 
+```
+wget https://cardiac.nottingham.ac.uk/syncropatch_export/test_data.tar.xz -P tests/
+tar xvf tests/test_data.tar.xz
+```
+
+Then you can run the tests.
 ```
 python3 -m unittest
 ```
