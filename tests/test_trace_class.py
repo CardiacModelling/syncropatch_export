@@ -30,8 +30,8 @@ class TestTraceClass(unittest.TestCase):
         sections1 = protocol_from_json.get_all_sections()
         sections2 = protocol_desc.get_all_sections()
 
-        t_error = np.max(np.abs((sections1 - sections2))[:-2, :2])
-        v_error = np.max(np.abs((sections1 - sections2))[:, 2:])
+        t_error = np.max(np.abs((sections1[:-2, :2] - sections2[:-2, :2])))
+        v_error = np.max(np.abs((sections1[:, 2:] - sections2[:, 2:])))
 
         self.assertLess(t_error, 1e-2)
         self.assertLess(v_error, 1e-4)
