@@ -106,7 +106,7 @@ To run the tests you must first download some test data. Test data is available 
 
 ```
 wget https://cardiac.nottingham.ac.uk/syncropatch_export/test_data.tar.xz -P tests/
-tar xvf tests/test_data.tar.xz
+tar xvf tests/test_data.tar.xz -C tests/
 ```
 
 Then you can run the tests.
