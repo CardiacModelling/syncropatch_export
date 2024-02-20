@@ -37,7 +37,6 @@ class TestTraceClass(unittest.TestCase):
         # There may be some extra time on the end of the protocol in the json
         t_error = np.max(np.abs((sections1 - sections2))[:-1, :2])
 
-
         self.assertLess(t_error, 1e-2)
         self.assertLess(v_error, 1e-4)
 

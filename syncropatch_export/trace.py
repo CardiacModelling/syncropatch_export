@@ -66,9 +66,10 @@ class Trace:
 
         """
 
-        voltage_protocol= VoltageProtocol.from_json(
+        voltage_protocol = VoltageProtocol.from_json(
             self.meta['ExperimentConditions']['VoltageProtocol'],
-            self.meta['ExperimentConditions']['VMembrane_mV'])
+            self.meta['ExperimentConditions']['VMembrane_mV']
+        )
 
         return voltage_protocol
 
