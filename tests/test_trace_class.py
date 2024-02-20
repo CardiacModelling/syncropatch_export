@@ -25,13 +25,18 @@ class TestTraceClass(unittest.TestCase):
         times = self.test_trace.get_times()
 
         protocol_from_json = self.test_trace.get_voltage_protocol()
-        protocol_desc = VoltageProtocol.from_voltage_trace(voltages, times)
+        holding_potential = protocol_from_json.get_holding_potential()
+        protocol_desc = VoltageProtocol.from_voltage_trace(voltages, times,
+                                                           holding_potential)
 
         sections1 = protocol_from_json.get_all_sections()
         sections2 = protocol_desc.get_all_sections()
 
-        t_error = np.max(np.abs((sections1 - sections2))[:-2, :2])
         v_error = np.max(np.abs((sections1 - sections2))[:, 2:])
+
+        # There may be some extra time on the end of the protocol in the json
+        t_error = np.max(np.abs((sections1 - sections2))[:-1, :2])
+
 
         self.assertLess(t_error, 1e-2)
         self.assertLess(v_error, 1e-4)
@@ -40,17 +45,17 @@ class TestTraceClass(unittest.TestCase):
         voltages = self.test_trace.get_voltage()
         times = self.test_trace.get_times()
 
-        protocol_desc = self.test_trace.get_voltage_protocol()
+        voltage_protocol = self.test_trace.get_voltage_protocol()
 
         def voltage_func(t):
-            for tstart, tend, vstart, vend in protocol_desc.get_all_sections():
+            for tstart, tend, vstart, vend in voltage_protocol.get_all_sections():
                 if t >= tstart and t < tend:
                     if vstart != vend:
                         return vstart + (vend - vstart) * (t - tstart)/(tend - tstart)
                     else:
                         return vstart
 
-            return vend
+            return voltage_protocol.get_holding_potential()
 
         for t, v in zip(times, voltages):
             self.assertLess(voltage_func(t) - v, 1e-3)
