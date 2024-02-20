@@ -60,8 +60,18 @@ class Trace:
         self.voltage_protocol = self.get_voltage_protocol()
 
     def get_voltage_protocol(self, holding_potential=-80.0):
-        return VoltageProtocol.from_json(
-            self.meta['ExperimentConditions']['VoltageProtocol'])
+        """Extract information about the voltage protocol from the json file
+
+        returns: a VoltageProtocol object
+
+        """
+
+        voltage_protocol = VoltageProtocol.from_json(
+            self.meta['ExperimentConditions']['VoltageProtocol'],
+            self.meta['ExperimentConditions']['VMembrane_mV']
+        )
+
+        return voltage_protocol
 
     def get_protocol_description(self, holding_potential=-80.0):
         """Get the protocol as a numpy array describing the voltages and
