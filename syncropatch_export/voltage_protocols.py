@@ -17,8 +17,6 @@ class VoltageProtocol():
             output_sections.append(np.array((tstart, tstart + tdur,
                                              vstart, vend)))
 
-        last_t = output_sections[-1][1]
-
         return VoltageProtocol(np.array(output_sections),
                                holding_potential=holding_potential)
 
