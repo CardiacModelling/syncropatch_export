@@ -2,7 +2,7 @@ import numpy as np
 
 
 class VoltageProtocol():
-    def from_json(json_protocol):
+    def from_json(json_protocol, holding_potential):
         """ Converts a protocol (from the json file) into a np.array
 
         """
@@ -19,12 +19,8 @@ class VoltageProtocol():
 
         last_t = output_sections[-1][1]
 
-        # TODO check if there is a holding potential field in the file
-        holding_v = output_sections[0][2]
-
-        output_sections.append((last_t, np.inf, holding_v, holding_v))
-
-        return VoltageProtocol(np.array(output_sections))
+        return VoltageProtocol(np.array(output_sections),
+                               holding_potential=holding_potential)
 
     def from_voltage_trace(voltage_trace, times, holding_potential=-80.0):
         threshold = 1e-3
@@ -58,13 +54,15 @@ class VoltageProtocol():
 
             lst.append(np.array([start_t, end_t, v_start, v_end]))
 
-        lst.append(np.array([end_t, np.inf, holding_potential,
-                             holding_potential]))
         desc = np.vstack(lst)
-        return VoltageProtocol(desc)
+        return VoltageProtocol(desc, holding_potential)
 
-    def __init__(self, desc):
+    def __init__(self, desc, holding_potential):
         self._desc = desc
+        self.holding_potential = holding_potential
+
+    def get_holding_potential(self):
+        return self.holding_potential
 
     def get_step_start_times(self):
         return [line[0] for line in self._desc]
