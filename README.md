@@ -55,15 +55,11 @@
 </details>
 
 
-
 <!-- ABOUT THE PROJECT -->
 ## About The Project
-This project contains a python package and scripts for processing data outputted from Nanion SynroPatch 384. With this package you can export each sweep of each protocol for each well as individual files (.csv). Meta-data describing the protocol, and variables such as membrance capacitance (Cm), Rseries and Rseal can be exported also.
+This project contains a python package and scripts for processing data outputted from Nanion SynroPatch 384. With this package you can export each sweep of each protocol for each well as individual files (.csv). 
+Meta-data describing the protocol, and variables such as membrance capacitance (Cm), Rseries and Rseal can be exported also.
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
 
 
 <!-- GETTING STARTED -->
@@ -74,11 +70,11 @@ To get a local copy up and running follow these simple example steps.
 
 ### Prerequisites
 
-This package has been tested on Ubuntu with Python3.7 Python3.8 Python3.9 Python3.10 and Python3.11.
+This package has been tested on Ubuntu with Python 3.7, 3.8, 3.9, 3.10 and 3.11.
 
 ### Installation
 
-irst clone this repository
+First clone this repository
 
 ```
 git clone git@github.com:CardiacModelling/syncropatch_export && cd syncropatch_export
