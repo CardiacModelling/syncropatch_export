@@ -58,13 +58,7 @@
 
 <!-- ABOUT THE PROJECT -->
 ## About The Project
-This project contains a python package and scripts for extracting data from highthroughput patch-clamp experiments such as those performed on a Nanion SynroPatch 384. The package contains a lot of useful functionality that can be used to perform:
-- leak correction;
-- QC checks;
-- plotting trace;
-- exporting data into different file.
-
-
+This project contains a python package and scripts for processing data outputted from Nanion SynroPatch 384. With this package you can export each sweep of each protocol for each well as individual files (.csv). Meta-data describing the protocol, and variables such as membrance capacitance (Cm), Rseries and Rseal can be exported also.
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
