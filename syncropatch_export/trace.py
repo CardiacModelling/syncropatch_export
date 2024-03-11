@@ -100,11 +100,10 @@ class Trace:
         '''
 
         Params:
-        leakcorrect: Bool. Set to true if onboard leak correction was used
+        leakcorrect: Bool. Set to true if using onboard leak correction
 
         Returns: all raw current traces from .dat files
 
-        TODO: Rename. Detect 'leakcorrect' flag automatically
         '''
         return self.get_trace_sweeps(leakcorrect=leakcorrect)
 
