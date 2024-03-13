@@ -245,6 +245,15 @@ class Trace:
                                                          Capacitance[k, i, j],
                                                          Rseries[k, i, j]))
 
+        # Convert values to np arrays taking care to remove handle None values
+        for well in out_dict:
+            vals = out_dict[well]
+            if vals:
+                shape = (len(vals), len(vals[0]))
+                vals = [x if x is not None else np.nan for x in vals]
+                vals = np.vstack(vals).reshape(shape).astype(np.float64)
+                out_dict[well] = vals
+
         return out_dict
 
     def get_onboard_QC_df(self, sweeps=None):
@@ -263,8 +272,8 @@ class Trace:
 
         df_rows = []
         for sweep in sweeps:
-            for well in self.WELL_ID.values():
-                if well <= len(QC_dict[well]):
+            for well in np.array(self.WELL_ID).flatten():
+                if well not in QC_dict:
                     continue
                 Rseal, Capacitance, Rseries = QC_dict[well][sweep]
                 df_row = {'Rseal': Rseal,
@@ -275,4 +284,4 @@ class Trace:
                           }
                 df_rows.append(df_row)
 
-        return pd.from_records(df_rows)
+        return pd.DataFrame.from_records(df_rows)
