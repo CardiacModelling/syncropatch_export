@@ -63,6 +63,7 @@ class TestTraceClass(unittest.TestCase):
         tr = self.test_trace
         v = tr.get_voltage()
         ts = tr.get_times()
+        all_traces = tr.get_all_traces(leakcorrect=True)
         all_traces = tr.get_all_traces()
 
         self.assertTrue(np.all(np.isfinite(v)))
