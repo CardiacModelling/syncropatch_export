@@ -63,6 +63,15 @@ class TestTraceClass(unittest.TestCase):
         for t, v in zip(times, voltages):
             self.assertLess(voltage_func(t) - v, 1e-3)
 
+    def test_get_QC(self):
+        tr = self.test_trace
+        QC_values = tr.get_onboard_QC_values()
+        self.assertGreater(len(QC_values), 0)
+        df = tr.get_onboard_QC_df()
+
+        self.assertGreater(df.shape[0], 0)
+        self.assertGreater(df.shape[1], 0)
+
     def test_get_traces(self):
         tr = self.test_trace
         v = tr.get_voltage()

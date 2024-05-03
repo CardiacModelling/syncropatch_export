@@ -250,6 +250,15 @@ class Trace:
                                                          Capacitance[k, i, j],
                                                          Rseries[k, i, j]))
 
+        # Convert values to np arrays taking care to remove handle None values
+        for well in out_dict:
+            vals = out_dict[well]
+            if vals:
+                shape = (len(vals), len(vals[0]))
+                vals = [x if x is not None else np.nan for x in vals]
+                vals = np.vstack(vals).reshape(shape).astype(np.float64)
+                out_dict[well] = vals
+
         return out_dict
 
     def get_onboard_QC_df(self, sweeps=None):
