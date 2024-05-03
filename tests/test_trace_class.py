@@ -94,7 +94,7 @@ class TestTraceClass(unittest.TestCase):
                                      'example_trace'))
             plt.close(fig)
 
-    def test_qc_dict(self):
+    def test_qc_df(self):
         res = self.test_trace.get_onboard_QC_df(sweeps=[0])
         self.assertGreater(res.shape[0], 0)
 
