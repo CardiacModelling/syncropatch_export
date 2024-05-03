@@ -2,8 +2,8 @@ import os
 import unittest
 
 import matplotlib.pyplot as plt
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 from syncropatch_export.trace import Trace as tr
 from syncropatch_export.voltage_protocols import VoltageProtocol
