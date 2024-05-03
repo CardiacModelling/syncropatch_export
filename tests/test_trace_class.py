@@ -2,6 +2,7 @@ import os
 import unittest
 
 import matplotlib.pyplot as plt
+import pandas as pd
 import numpy as np
 
 from syncropatch_export.trace import Trace as tr
@@ -109,13 +110,14 @@ class TestTraceClass(unittest.TestCase):
         for res in dfs:
             # Check res is a pd.DataFrame
             self.assertIsInstance(res, pd.DataFrame)
-            
+
             # Check it contains data (number of rows>0)
             self.assertGreater(res.shape[0], 0)
-            
+
             # Check it contains all quality control parameters
-            for qcParam in ['Rseal', 'Cm', 'Rseries', 'well', 'sweep']
+            for qcParam in ['Rseal', 'Cm', 'Rseries', 'well', 'sweep']:
                 self.assertIn(qcParam, res)
-                
+
         # Check restricting number of sweeps returns less data
         self.assertLess(dfs[0].shape[0], dfs[1].shape[0])
+
