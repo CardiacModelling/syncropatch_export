@@ -40,6 +40,10 @@ class TestTraceClass(unittest.TestCase):
         self.assertLess(t_error, 1e-2)
         self.assertLess(v_error, 1e-4)
 
+    def test_protocol_export(self):
+        protocol = self.test_trace.get_voltage_protocol()
+        protocol.export_txt(os.path.join(self.output_dir, 'protocol.txt'))
+
     def test_protocol_timeseries(self):
         voltages = self.test_trace.get_voltage()
         times = self.test_trace.get_times()
@@ -89,3 +93,10 @@ class TestTraceClass(unittest.TestCase):
             plt.savefig(os.path.join(self.output_dir,
                                      'example_trace'))
             plt.close(fig)
+
+    def test_qc_dict(self):
+        res = self.test_trace.get_onboard_QC_df(sweeps=[0])
+        self.assertGreater(res.shape[0], 0)
+
+        res = self.test_trace.get_onboard_QC_df(sweeps=None)
+        self.assertGreater(res.shape[0], 0)

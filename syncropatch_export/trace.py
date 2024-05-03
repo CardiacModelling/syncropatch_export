@@ -41,9 +41,9 @@ class Trace:
         self.MeasurementLayout = TraceHeader['MeasurementLayout']
         self.FileInformation = TraceHeader['FileInformation']
 
-        self.WELL_ID = [
+        self.WELL_ID = np.array([
             [lab + str(i).zfill(2) for lab in string.ascii_uppercase[:16]]
-            for i in range(1, 25)]
+            for i in range(1, 25)])
 
         self.NofSweeps = self.MeasurementLayout['NofSweeps']
         self.WP_nRows = TraceHeader['Chiplayout']['WP_nRows']
@@ -72,6 +72,14 @@ class Trace:
         )
 
         return voltage_protocol
+
+    def get_voltage_protocol_json(self):
+        """
+        Returns the voltage protocol as a JSON object
+        """
+    
+        return self.meta['ExperimentConditions']['VoltageProtocol']
+
 
     def get_protocol_description(self, holding_potential=-80.0):
         """Get the protocol as a numpy array describing the voltages and
@@ -262,9 +270,7 @@ class Trace:
 
         df_rows = []
         for sweep in sweeps:
-            for well in self.WELL_ID.values():
-                if well <= len(QC_dict[well]):
-                    continue
+            for well in self.WELL_ID.flatten():
                 Rseal, Capacitance, Rseries = QC_dict[well][sweep]
                 df_row = {'Rseal': Rseal,
                           'Cm': Capacitance,
@@ -274,4 +280,4 @@ class Trace:
                           }
                 df_rows.append(df_row)
 
-        return pd.from_records(df_rows)
+        return pd.DataFrame.from_records(df_rows)
