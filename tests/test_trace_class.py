@@ -1,5 +1,6 @@
 import os
 import unittest
+import json
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -44,6 +45,10 @@ class TestTraceClass(unittest.TestCase):
     def test_protocol_export(self):
         protocol = self.test_trace.get_voltage_protocol()
         protocol.export_txt(os.path.join(self.output_dir, 'protocol.txt'))
+        json_protocol = self.test_trace.get_voltage_protocol_json()
+        
+        with open(os.path.join(self.output_dir, 'protocol.json'), 'w') as fin:
+            json.dump(json_protocol, fin)
 
     def test_protocol_timeseries(self):
         voltages = self.test_trace.get_voltage()
