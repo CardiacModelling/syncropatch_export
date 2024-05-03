@@ -103,9 +103,19 @@ class TestTraceClass(unittest.TestCase):
                                      'example_trace'))
             plt.close(fig)
 
-    def test_qc_dict(self):
-        res = self.test_trace.get_onboard_QC_df(sweeps=[0])
-        self.assertGreater(res.shape[0], 0)
-
-        res = self.test_trace.get_onboard_QC_df(sweeps=None)
-        self.assertGreater(res.shape[0], 0)
+    def test_qc_df(self):
+        dfs = [self.test_trace.get_onboard_QC_df(sweeps=[0]),
+               self.test_trace.get_onboard_QC_df(sweeps=None)]
+        for res in dfs:
+            # Check res is a pd.DataFrame
+            self.assertIsInstance(res, pd.DataFrame)
+            
+            # Check it contains data (number of rows>0)
+            self.assertGreater(res.shape[0], 0)
+            
+            # Check it contains all quality control parameters
+            for qcParam in ['Rseal', 'Cm', 'Rseries', 'well', 'sweep']
+                self.assertIn(qcParam, res)
+                
+        # Check restricting number of sweeps returns less data
+        self.assertLess(dfs[0].shape[0], dfs[1].shape[0])
