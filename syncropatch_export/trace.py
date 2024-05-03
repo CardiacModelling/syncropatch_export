@@ -41,9 +41,9 @@ class Trace:
         self.MeasurementLayout = TraceHeader['MeasurementLayout']
         self.FileInformation = TraceHeader['FileInformation']
 
-        self.WELL_ID = [
+        self.WELL_ID = np.array([
             [lab + str(i).zfill(2) for lab in string.ascii_uppercase[:16]]
-            for i in range(1, 25)]
+            for i in range(1, 25)])
 
         self.NofSweeps = self.MeasurementLayout['NofSweeps']
         self.WP_nRows = TraceHeader['Chiplayout']['WP_nRows']
@@ -73,6 +73,12 @@ class Trace:
 
         return voltage_protocol
 
+    def get_voltage_protocol_json(self):
+        """
+        Returns the voltage protocol as a JSON object
+        """
+        return self.meta['ExperimentConditions']['VoltageProtocol'][0]
+
     def get_protocol_description(self, holding_potential=-80.0):
         """Get the protocol as a numpy array describing the voltages and
         durations for each section
@@ -100,11 +106,10 @@ class Trace:
         '''
 
         Params:
-        leakcorrect: Bool. Set to true if onboard leak correction was used
+        leakcorrect: Bool. Set to true if using onboard leak correction
 
         Returns: all raw current traces from .dat files
 
-        TODO: Rename. Detect 'leakcorrect' flag automatically
         '''
         return self.get_trace_sweeps(leakcorrect=leakcorrect)
 
@@ -245,6 +250,15 @@ class Trace:
                                                          Capacitance[k, i, j],
                                                          Rseries[k, i, j]))
 
+        # Convert values to np arrays taking care to remove handle None values
+        for well in out_dict:
+            vals = out_dict[well]
+            if vals:
+                shape = (len(vals), len(vals[0]))
+                vals = [x if x is not None else np.nan for x in vals]
+                vals = np.vstack(vals).reshape(shape).astype(np.float64)
+                out_dict[well] = vals
+
         return out_dict
 
     def get_onboard_QC_df(self, sweeps=None):
@@ -263,9 +277,7 @@ class Trace:
 
         df_rows = []
         for sweep in sweeps:
-            for well in self.WELL_ID.values():
-                if well <= len(QC_dict[well]):
-                    continue
+            for well in self.WELL_ID.flatten():
                 Rseal, Capacitance, Rseries = QC_dict[well][sweep]
                 df_row = {'Rseal': Rseal,
                           'Cm': Capacitance,
@@ -275,4 +287,4 @@ class Trace:
                           }
                 df_rows.append(df_row)
 
-        return pd.from_records(df_rows)
+        return pd.DataFrame.from_records(df_rows)
