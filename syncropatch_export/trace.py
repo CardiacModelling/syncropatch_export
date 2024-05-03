@@ -77,9 +77,7 @@ class Trace:
         """
         Returns the voltage protocol as a JSON object
         """
-    
         return self.meta['ExperimentConditions']['VoltageProtocol']
-
 
     def get_protocol_description(self, holding_potential=-80.0):
         """Get the protocol as a numpy array describing the voltages and
