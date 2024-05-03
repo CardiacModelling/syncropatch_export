@@ -46,7 +46,7 @@ class TestTraceClass(unittest.TestCase):
         protocol = self.test_trace.get_voltage_protocol()
         protocol.export_txt(os.path.join(self.output_dir, 'protocol.txt'))
         json_protocol = self.test_trace.get_voltage_protocol_json()
-        
+
         with open(os.path.join(self.output_dir, 'protocol.json'), 'w') as fin:
             json.dump(json_protocol, fin)
 
