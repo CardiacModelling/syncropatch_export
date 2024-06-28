@@ -68,6 +68,35 @@ class VoltageProtocol():
     def get_ramps(self):
         return [line for line in self._desc if line[2] != line[3]]
 
+
+    def _voltage_func(self, t: np.float64):
+        protocol_description = self._desc
+
+        if t <= 0 or t >= protocol_description[-1, 1]:
+            return self.holding_potential
+
+        for row in protocol_description:
+            tstart, tend, vstart, vend = row
+            if t >= tend:
+                continue
+            if vend != vstart:
+                return vstart + (t - tstart) * (vend - vstart) / (tend - tstart)
+            else:
+                return vend
+
+        raise ValueError(f"Invalid voltage protocol at time {t}: {protocol_description}")
+
+    def get_time_series(self, times):
+        """ Generates a voltage time-series based on the protocol
+
+        @param times: The times at which to evaluate the voltage. These should
+        be the observation times of the experiment
+
+        returns: A 1D numpy array containing the voltages for each t in times.
+        """
+        return np.array([self._voltage_func(t) for t in times])
+
+
     def get_all_sections(self):
         """ Return a np.array describing the protocol.
 
