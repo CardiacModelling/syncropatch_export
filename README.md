@@ -30,7 +30,7 @@ This repository contains a python package and scripts for processing data output
 With this package you can export each sweep of each protocol for each well as individual files (.csv). 
 Meta-data describing the protocol, and variables such as membrance capacitance (Cm), Rseries and Rseal can be exported.
 
-This package is tested on Ubuntu with Python 3.8, 3.9, 3.10, 3.11, 3.12, and 3.13.
+This package is tested on Ubuntu with Python 3.8, 3.9, 3.10, 3.11, 3.12, and 3.13 and is distributed under a [BSD 3-Clause License](./LICENSE).
 
 ## Getting Started
 
@@ -66,11 +66,3 @@ Then you can run the tests.
 ```
 python3 -m unittest
 ```
-
-## License
-
-At the moment this is a private repo
-
-## Contact
-
-Joseph Shuttleworth joseph.shuttleworth@nottingham.ac.uk
