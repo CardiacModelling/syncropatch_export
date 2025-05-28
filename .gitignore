@@ -1,6 +1,4 @@
 /tests/test_data
-*.pyc
+*__pycache__*
+*.egg-info
 *.DS_Store
-*__pycache__*
-*.egg_info
-*__pycache__*
