@@ -175,7 +175,7 @@ class Trace:
         corrected data can be obtained by setting ``leakcorrect=True``.
 
         Args:
-            sweeps (int): The number of sweeps to return.
+            sweeps (list): A list of sweep indexes to return, e.g. ``[0, 1, 2]``.
             leakcorrect (bool): Used to choose corrected or uncorrected data.
 
         Returns:
@@ -191,18 +191,22 @@ class Trace:
             for ijWell in iCol:
                 out_dict[ijWell] = []
 
+        # No sweeps selected? Then return full set
         if sweeps is None:
-            # Sometimes NofSweeps seems to be incorrect
             sweeps = list(range(self.NofSweeps))
-
-        # Check `sweeps` is something sensible
-        elif len(sweeps) > self.NofSweeps:
-            raise ValueError('Required #sweeps > total #sweeps.')
-
-        # convert negative values to positive
-        for i, sweep in enumerate(sweeps):
-            if sweep < 0:
-                sweeps[i] = self.NofSweeps + sweep
+        else:
+            # Allow negative values to index later sweeps
+            sweeps = [self.NofSweeps + x if x < 0 else x for x in sweeps]
+            # Check all sweeps exist
+            if max(sweeps) >= self.NofSweeps:
+                raise ValueError(
+                    f'Invalid sweep selection: sweep {max(sweeps)} requested,'
+                    f' but only {self.NofSweeps} available.')
+            if min(sweeps) < 0:
+                raise ValueError(
+                    f'Invalid sweep selection: sweep'
+                    f' {min(sweeps) - self.NofSweeps} requested, but only'
+                    f' {self.NofSweeps} available.')
 
         trace_file_idxs, idx_is = self.get_trace_file(sweeps)
 

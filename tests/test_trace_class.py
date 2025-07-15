@@ -99,12 +99,25 @@ class TestTraceClass(unittest.TestCase):
         ts = self.trace.get_times()
         all_traces = self.trace.get_all_traces(leakcorrect=True)
         all_traces = self.trace.get_all_traces()
+        # TODO: Check the output, numerically, by comparing a few points
 
         self.assertTrue(np.all(np.isfinite(v)))
         self.assertTrue(np.all(np.isfinite(ts)))
 
         for well, trace in all_traces.items():
             self.assertTrue(np.all(np.isfinite(trace)))
+
+        # Test complex sweep selection
+        a = self.trace.get_trace_sweeps([-1, -2])
+        b = self.trace.get_trace_sweeps([1, 0])
+        self.assertEqual(len(a), len(b))
+        self.assertTrue(np.all(a['A01'] == b['A01']))
+
+        # Test asking for non-existent sweeps
+        self.assertRaisesRegex(ValueError, 'Invalid sweep selection',
+                               self.trace.get_trace_sweeps, [2])
+        self.assertRaisesRegex(ValueError, 'Invalid sweep selection',
+                               self.trace.get_trace_sweeps, [-3])
 
         '''
         # plot test output
