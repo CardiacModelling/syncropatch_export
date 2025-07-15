@@ -50,7 +50,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Syncropatch export'
-# copyright = syncropath_export.COPYRIGHT
+# copyright = syncropatch_export.COPYRIGHT
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
