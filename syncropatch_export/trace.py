@@ -81,7 +81,7 @@ class Trace:
         # TODO Why only the first row?
         return self.meta['ExperimentConditions']['VoltageProtocol'][0]
 
-    def get_protocol_description(self, holding_potential=-80.0):
+    def get_protocol_description(self):
         """
         Returns the protocol as an ``np.numpy`` with an entry for each segment.
 
@@ -119,7 +119,8 @@ class Trace:
 
     def get_trace_file(self, sweeps):
         """
-        Returns the trace file index of the file for a given set of sweeps
+        Returns the trace file index
+         of the file for a given set of sweeps
         """
         OUT_file_idx = []
         OUT_idx_i = []
