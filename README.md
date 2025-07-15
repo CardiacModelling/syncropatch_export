@@ -57,6 +57,15 @@ Tests are written using the standard [unittest](https://docs.python.org/3.13/lib
 Online testing, style-checking, and coverage testing is set up using GitHub actions.
 Coverage testing is handled via [Codecov](https://about.codecov.io/).
 
+Style testing is done with `flake8`. For example, to test with 4 subprocesses use
+```
+flake8 -j4
+```
+Import sorting can be checked with `isort`:
+```
+isort --verbose --check-only --diff syncropatch_export tests setup.py
+```
+
 Documentation is implemented using [Sphinx](https://www.sphinx-doc.org/).
 To compile locally, first install the required dependencies
 ```
