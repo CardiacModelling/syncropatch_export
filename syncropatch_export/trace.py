@@ -9,11 +9,14 @@ from .voltage_protocols import VoltageProtocol
 
 
 class Trace:
-    """ Defines a Trace object from the output of a Nanion experiment.
+    """
+    Defines a Trace object from the output of a Nanion experiment.
 
-    @params
-    filepath: path pointing to folder containing .json and .dat files (str)
-    json_file: specific filename of json file (str)
+    Args:
+        filepath (str): A path pointing to folder containing both ``.json`` and
+            ``.dat`` files.
+        json_file (str): The name of a JSON file within ``path``, from which
+            meta data will be read.
     """
 
     def __init__(self, filepath, json_file: str):
@@ -22,7 +25,7 @@ class Trace:
         if json_file[-5:] == '.json':
             self.json_file = json_file
         else:
-            self.json_file = json_file + ".json"
+            self.json_file = json_file + '.json'
 
         # load json file
         with open(os.path.join(self.filepath, self.json_file)) as f:
@@ -59,64 +62,65 @@ class Trace:
 
         self.voltage_protocol = self.get_voltage_protocol()
 
-    def get_voltage_protocol(self, holding_potential=-80.0):
-        """Extract information about the voltage protocol from the json file
-
-        returns: a VoltageProtocol object
-
+    def get_voltage_protocol(self):
         """
+        Extract information about the voltage protocol from the JSON file.
 
-        voltage_protocol = VoltageProtocol.from_json(
+        Returns:
+            VoltageProtocol: A voltage protocol object.
+        """
+        return VoltageProtocol.from_json(
             self.meta['ExperimentConditions']['VoltageProtocol'],
             self.meta['ExperimentConditions']['VMembrane_mV']
         )
 
-        return voltage_protocol
-
     def get_voltage_protocol_json(self):
         """
-        Returns the voltage protocol as a JSON object
+        Returns unparsed JSON object representing the voltage protocol.
         """
+        #TODO Why only the first row?
         return self.meta['ExperimentConditions']['VoltageProtocol'][0]
 
     def get_protocol_description(self, holding_potential=-80.0):
-        """Get the protocol as a numpy array describing the voltages and
-        durations for each section
+        """
+        Returns the protocol as an ``np.numpy`` with an entry for each segment.
 
-        returns: np.array where each row contains the start time, end time,
-        initial voltage, and final voltage
+        Returns:
+            np.array: An array where each row contains the start time,
+                end time, initial voltage, and final voltage of a ramp or step
+                segment.
 
         """
         return self.get_voltage_protocol().get_all_sections()
 
     def get_voltage(self):
-        '''
+        """
         Returns the voltage stimulus from Nanion .json file
-        '''
-        return np.array(self.TimeScaling['Stimulus']).astype(np.float64)\
-            * 1e3
+        """
+        return np.array(self.TimeScaling['Stimulus']).astype(np.float64) * 1e3
 
     def get_times(self):
-        '''
+        """
         Returns the time steps from Nanion .json file
-        '''
+        """
         return np.array(self.TimeScaling['TR_Time']) * 1e3
 
     def get_all_traces(self, leakcorrect=False):
-        '''
+        """
 
-        Params:
-        leakcorrect: Bool. Set to true if using onboard leak correction
+        Args:
+            leakcorrect (bool): Set to true if using onboard leak correction
 
-        Returns: all raw current traces from .dat files
+        Returns:
+            All raw current traces from .dat files
 
-        '''
+        """
         return self.get_trace_sweeps(leakcorrect=leakcorrect)
 
     def get_trace_file(self, sweeps):
-        '''
+        """
         Returns the trace file index of the file for a given set of sweeps
-        '''
+        """
         OUT_file_idx = []
         OUT_idx_i = []
         for actSweep in sweeps:
@@ -133,9 +137,9 @@ class Trace:
         return OUT_file_idx, OUT_idx_i
 
     def get_trace_sweeps(self, sweeps=None, leakcorrect=False):
-        '''
-        Returns a subset of sweeps defined by the input 'sweeps'
-        '''
+        """
+        Returns a subset of sweeps defined by the input ``sweeps``.
+        """
 
         # initialise output
         out_dict = {}
@@ -221,13 +225,13 @@ class Trace:
         return out_dict
 
     def get_onboard_QC_values(self, sweeps=None):
-        '''Read quality control values Rseal, Cslow (Cm), and Rseries from a Nanion .json file
+        """
+        Return the quality control values Rseal, Cslow (Cm), and Rseries.
 
         returns: A dictionary where the keys are the well e.g. 'A01' and the
         values are the values used for onboard QC i.e., the seal resistance,
         cell capacitance and the series resistance.
-
-        '''
+        """
 
         # load QC values
         RSeal = np.array(self.meta['QCData']['RSeal'])
@@ -262,11 +266,13 @@ class Trace:
         return out_dict
 
     def get_onboard_QC_df(self, sweeps=None):
-        """Create a Pandas DataFrame which lists the Rseries, memebrane
+        """
+        Create a Pandas DataFrame which lists the Rseries, memebrane
         capacitance and Rseries for each well and sweep.
 
-        @Returns A pandas.DataFrame describing the onboard QC estimates for
-        each well, sweep
+        Returns:
+            pandas.DataFrame: A data frame describing the onboard QC estimates
+                for each well, sweep
 
         """
 
@@ -288,3 +294,4 @@ class Trace:
                 df_rows.append(df_row)
 
         return pd.DataFrame.from_records(df_rows)
+

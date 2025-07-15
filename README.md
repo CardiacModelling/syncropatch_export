@@ -2,6 +2,7 @@
 [![codecov](https://codecov.io/gh/CardiacModelling/syncropatch_export/graph/badge.svg?token=HOL0FrpGqs)](https://codecov.io/gh/CardiacModelling/syncropatch_export)
 
 This repository contains a python package and scripts for processing data outputted from Nanion SynroPatch 384.
+
 With this package you can export each sweep of each protocol for each well as individual files (.csv). 
 Meta-data describing the protocol, and variables such as membrance capacitance (Cm), Rseries and Rseal can be exported.
 
@@ -41,3 +42,30 @@ Then you can run the tests.
 ```
 python3 -m unittest
 ```
+
+## Usage example
+
+...TODO
+
+
+## Development
+
+Commits should be merged in via pull requests.
+
+Tests are written using the standard [unittest](https://docs.python.org/3.13/library/unittest.html) framework.
+
+Online testing, style-checking, and coverage testing is set up using GitHub actions.
+Coverage testing is handled via [Codecov](https://about.codecov.io/).
+
+Documentation is implemented using [Sphinx](https://www.sphinx-doc.org/).
+To compile locally, first install the required dependencies
+```
+pip install -e .'[docs]'
+```
+and then use Make
+```
+cd docs
+make html
+```
+
+
