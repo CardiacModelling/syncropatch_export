@@ -9,7 +9,7 @@ with open('README.md') as f:
 import os   # isort:skip
 import sys  # isort:skip
 sys.path.append(os.path.abspath('syncropatch_export'))
-from _version import __version__ as version  # noqa
+from _version import __version__ as version  # noqa isort:skip
 sys.path.pop()
 del os, sys
 
