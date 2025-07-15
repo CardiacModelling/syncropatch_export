@@ -67,7 +67,7 @@ class TestTraceClass(unittest.TestCase):
                         return vstart + (vend - vstart) * (t - tstart) / (tend - tstart)
                     else:
                         return vstart
-            return voltage_protocol.get_holding_potential()  # pragma: no-cover
+            return voltage_protocol.get_holding_potential()  # pragma: no cover
 
         for t, v in zip(times, voltages):
             self.assertLess(voltage_func(t) - v, 1e-3)
