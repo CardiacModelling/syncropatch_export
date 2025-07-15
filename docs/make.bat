@@ -9,7 +9,7 @@ if "%SPHINXBUILD%" == "" (
 )
 set SOURCEDIR=source
 set BUILDDIR=build
-set SPHINXPROJ=Myokit
+set SPHINXPROJ=syncropath_export
 
 if "%1" == "" goto help
 
