@@ -4,7 +4,6 @@ import os
 import tempfile
 import unittest
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
@@ -16,7 +15,6 @@ class TestTraceClass(unittest.TestCase):
     """
     Tests both the Trace and VoltageProtocol classes.
     """
-
 
     def setUp(self):
         f = 'staircaseramp (2)_2kHz_15.01.07'
@@ -103,21 +101,26 @@ class TestTraceClass(unittest.TestCase):
             self.assertTrue(np.all(np.isfinite(trace)))
 
         '''
-        if self.output_dir:
-            # plot test output
+        # plot test output
+        if False:
+            d = 'test_output'
+            if not os.path.exists(d):
+                os.makedirs(d)
+
+            import matplotlib.pyplot as plt
             fig, (ax1, ax2) = plt.subplots(2, 1)
-            ax1.set_title("Example Sweeps")
+            ax1.set_title('Example Sweeps')
             some_sweeps = self.trace.get_trace_sweeps([0])['A01']
 
             ax1.plot(ts, np.transpose(some_sweeps), color='grey', alpha=0.5)
             ax1.set_ylabel('Current')
             ax1.set_xlabel('Time')
-            ax2.set_title("Voltage Protocol")
+            ax2.set_title('Voltage Protocol')
             ax2.plot(ts, v)
             ax2.set_ylabel('Voltage')
             ax2.set_xlabel('Time')
             plt.tight_layout()
-            plt.savefig(os.path.join(self.output_dir, 'example_trace'))
+            plt.savefig(os.path.join(d, 'example_trace'))
             plt.close(fig)
         '''
 
