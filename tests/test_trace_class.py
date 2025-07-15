@@ -19,7 +19,7 @@ class TestTraceClass(unittest.TestCase):
         self.output_dir = os.path.join('test_output', 'test_trace_class')
 
         if not os.path.exists(self.output_dir):
-            os.makedirs(self.output_dir)
+            os.makedirs(self.output_dir)    # pragma: no-cover
         self.test_trace = tr(filepath, json_file)
 
     def test_protocol_descriptions(self):
@@ -60,11 +60,10 @@ class TestTraceClass(unittest.TestCase):
             for tstart, tend, vstart, vend in voltage_protocol.get_all_sections():
                 if t >= tstart and t < tend:
                     if vstart != vend:
-                        return vstart + (vend - vstart) * (t - tstart)/(tend - tstart)
+                        return vstart + (vend - vstart) * (t - tstart) / (tend - tstart)
                     else:
                         return vstart
-
-            return voltage_protocol.get_holding_potential()
+            return voltage_protocol.get_holding_potential()  # pragma: no-cover
 
         for t, v in zip(times, voltages):
             self.assertLess(voltage_func(t) - v, 1e-3)
