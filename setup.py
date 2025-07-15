@@ -6,8 +6,8 @@ with open('README.md') as f:
 
 
 # Load version number
-import os   # noqa
-import sys  # noqa
+import os   # isort:skip
+import sys  # isort:skip
 sys.path.append(os.path.abspath('syncropatch_export'))
 from _version import __version__ as version  # noqa
 sys.path.pop()
