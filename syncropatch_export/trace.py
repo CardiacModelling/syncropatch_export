@@ -33,10 +33,9 @@ class Trace:
     def __init__(self, filepath, json_file: str):
         # store file paths
         self.filepath = filepath
-        if json_file[-5:] == '.json':
-            self.json_file = json_file
-        else:
-            self.json_file = json_file + '.json'
+        self.json_file = json_file
+        if not json_file.endswith('.json'):
+            self.json_file += '.json'
 
         # load json file
         with open(os.path.join(self.filepath, self.json_file)) as f:

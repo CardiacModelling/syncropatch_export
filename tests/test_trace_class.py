@@ -41,6 +41,12 @@ class TestTraceClass(unittest.TestCase):
         self.assertLess(t_error, 1e-2)
         self.assertLess(v_error, 1e-4)
 
+    def test_get_protocol_description(self):
+        a = np.array(self.trace.get_protocol_description())
+        b = np.array(self.trace.get_voltage_protocol().get_all_sections())
+        self.assertEqual(a.shape, b.shape)
+        self.assertTrue(np.all(a == b))
+
     def test_protocol_export(self):
         with tempfile.TemporaryDirectory() as d:
             protocol = self.trace.get_voltage_protocol()
