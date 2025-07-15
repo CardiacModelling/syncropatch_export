@@ -10,7 +10,18 @@ from .voltage_protocols import VoltageProtocol
 
 class Trace:
     """
-    Defines a Trace object from the output of a Nanion experiment.
+    Reads a Nanion experiment and provides access to the data and meta data it
+    contains.
+
+    To create a :class:`Trace`, a directory name should be passed in, along
+    with the name of a JSON file within that directory containing the meta
+    data. Data can then be accessed using :meth:`get_all_traces` (to obtain a
+    ``dict`` mapping well names onto a 2-d numpy array containing the sampled
+    currents (in pA) for all sweeps.
+
+    Well are
+
+
 
     Args:
         filepath (str): A path pointing to folder containing both ``.json`` and
@@ -44,6 +55,13 @@ class Trace:
         self.MeasurementLayout = TraceHeader['MeasurementLayout']
         self.FileInformation = TraceHeader['FileInformation']
 
+        # Create (hardcoded) list-of-list of well names:
+        #  [['A01', 'B01', ..., 'P01'],
+        #   ['A02', 'B02', ..., 'P02'],
+        #   ...
+        #   ['A24', 'B24', ..., 'P24']]
+        # So a list of 24 lists with 16 entries each
+        #
         self.WELL_ID = np.array([
             [lab + str(i).zfill(2) for lab in string.ascii_uppercase[:16]]
             for i in range(1, 25)])
@@ -67,7 +85,7 @@ class Trace:
         Extract information about the voltage protocol from the JSON file.
 
         Returns:
-            VoltageProtocol: A voltage protocol object.
+            The :class:`VoltageProtocol` used in this experiment.
         """
         return VoltageProtocol.from_json(
             self.meta['ExperimentConditions']['VoltageProtocol'],
@@ -76,7 +94,8 @@ class Trace:
 
     def get_voltage_protocol_json(self):
         """
-        Returns unparsed JSON object representing the voltage protocol.
+        Returns an unparsed JSON object representing the first segment of the
+        voltage protocol.
         """
         # TODO Why only the first row?
         return self.meta['ExperimentConditions']['VoltageProtocol'][0]
@@ -86,33 +105,43 @@ class Trace:
         Returns the protocol as an ``np.numpy`` with an entry for each segment.
 
         Returns:
-            np.array: An array where each row contains the start time,
-                end time, initial voltage, and final voltage of a ramp or step
-                segment.
+            A numpy ``array`` where each row contains the start time, end time,
+            initial voltage, and final voltage of a ramp or step segment.
 
         """
         return self.get_voltage_protocol().get_all_sections()
 
     def get_voltage(self):
         """
-        Returns the voltage stimulus from Nanion .json file
+        Returns an array containing voltages (in mV) for each sampled point in
+        the traces.
         """
         return np.array(self.TimeScaling['Stimulus']).astype(np.float64) * 1e3
 
     def get_times(self):
         """
-        Returns the time steps from Nanion .json file
+        Returns the sampled times (in ms).
         """
         return np.array(self.TimeScaling['TR_Time']) * 1e3
 
     def get_all_traces(self, leakcorrect=False):
         """
+        Returns data for all wells and all sweeps (equivalent to calling
+        :meth:`get_trace_sweeps()` without any arguments).
+
+        Current is returned in pA.
+
+        By default, the data is returned without leak correction, but the leak
+        corrected data can be obtained by setting ``leakcorrect=True``.
 
         Args:
-            leakcorrect (bool): Set to true if using onboard leak correction
+            sweeps (int): The number of sweeps to return.
+            leakcorrect (bool): Used to choose corrected or uncorrected data.
 
         Returns:
-            All raw current traces from .dat files
+            A dictionary mapping well names (e.g. "A01") onto 2-d numpy arrays
+            of shape ``n_sweeps, n_times`` where ``n_sweeps`` is the number of
+            sweeps and ``n_times`` is the number of sampled points.
 
         """
         return self.get_trace_sweeps(leakcorrect=leakcorrect)
@@ -139,7 +168,22 @@ class Trace:
 
     def get_trace_sweeps(self, sweeps=None, leakcorrect=False):
         """
-        Returns a subset of sweeps defined by the input ``sweeps``.
+        Returns the first ``sweeps`` sweeps, for all wells.
+
+        Current is returned in pA.
+
+        By default, the data is returned without leak correction, but the leak
+        corrected data can be obtained by setting ``leakcorrect=True``.
+
+        Args:
+            sweeps (int): The number of sweeps to return.
+            leakcorrect (bool): Used to choose corrected or uncorrected data.
+
+        Returns:
+            A dictionary mapping well names (e.g. "A01") onto 2-d numpy arrays
+            of shape ``n_sweeps, n_times`` where ``n_sweeps`` is the number of
+            sweeps and ``n_times`` is the number of sampled points.
+
         """
 
         # initialise output
@@ -149,11 +193,11 @@ class Trace:
                 out_dict[ijWell] = []
 
         if sweeps is None:
-            #  Sometimes NofSweeps seems to be incorrect
+            # Sometimes NofSweeps seems to be incorrect
             sweeps = list(range(self.NofSweeps))
 
-        # check `getsweep` input is something sensible
-        if len(sweeps) > self.NofSweeps:
+        # Check `sweeps` is something sensible
+        elif len(sweeps) > self.NofSweeps:
             raise ValueError('Required #sweeps > total #sweeps.')
 
         # convert negative values to positive
@@ -193,9 +237,7 @@ class Trace:
 
                 # convert to double in pA
                 iColTraces = trace[idx_i:idx_f] * self.I2DScale[i] * 1e12
-                iColWells = self.WELL_ID[i]
-
-                for j, ijWell in enumerate(iColWells):
+                for j, ijWell in enumerate(self.WELL_ID[i]):
                     if leakcorrect:
                         leakoffset = 1
                     else:
@@ -229,9 +271,11 @@ class Trace:
         """
         Return the quality control values Rseal, Cslow (Cm), and Rseries.
 
-        returns: A dictionary where the keys are the well e.g. 'A01' and the
-        values are the values used for onboard QC i.e., the seal resistance,
-        cell capacitance and the series resistance.
+        Returns:
+            A dict mapping well names ('A01' up to 'P24') to tuples
+            ``(R_seal, Cm, R_series)`` containing the seal resistance, membrane
+            capacitance, and series resistance.
+
         """
 
         # load QC values
@@ -268,12 +312,11 @@ class Trace:
 
     def get_onboard_QC_df(self, sweeps=None):
         """
-        Create a Pandas DataFrame which lists the Rseries, memebrane
-        capacitance and Rseries for each well and sweep.
+        Create a Pandas DataFrame containing the seal resistance, membrane
+        capacitance, and series resistance for each well and sweep.
 
         Returns:
-            pandas.DataFrame: A data frame describing the onboard QC estimates
-                for each well, sweep
+            A ``pandas.DataFrame`` with the onboard QC estimates.
 
         """
 
