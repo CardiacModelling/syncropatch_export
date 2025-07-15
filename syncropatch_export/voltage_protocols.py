@@ -3,7 +3,7 @@ import numpy as np
 
 class VoltageProtocol:
     """
-    Represent a voltage step (and ramp) protocol.
+    Represent a voltage step and ramp protocol.
 
     Each protocol is represented as
 
@@ -14,6 +14,10 @@ class VoltageProtocol:
     :meth:`VoltageProtocol.from_json` or
     `meth:`VoltageProtocol.from_voltage_trace`.
     """
+
+    def __init__(self, desc, holding_potential, copy_data=True):
+        self._desc = np.copy(desc) if copy_data else desc
+        self.holding_potential = holding_potential
 
     @classmethod
     def from_json(cls, json_protocol, holding_potential):
@@ -33,7 +37,7 @@ class VoltageProtocol:
             vstart = float(section['VoltageStart'])
             vend = float(section['VoltageEnd'])
             output_sections.append((tstart, tstart + tdur, vstart, vend))
-        return cls(np.array(output_sections), holding_potential)
+        return cls(np.array(output_sections), holding_potential, False)
 
     @classmethod
     def from_voltage_trace(cls, voltage_trace, times, holding_potential=-80.0):
@@ -45,12 +49,9 @@ class VoltageProtocol:
 
         # Find gradient changes
         diff2 = np.abs(np.diff(voltage_trace, n=2))
-
-        windows = np.argwhere(diff2 > threshold).flatten()
-        window_locs = np.unique(windows)
+        window_locs = np.unique(np.argwhere(diff2 > threshold).flatten())
         window_locs = 1 + np.array([
             val for val in window_locs if val + 1 not in window_locs])
-
         windows = zip([0] + list(window_locs),
                       list(window_locs) + [len(voltage_trace) - 1])
 
@@ -58,26 +59,19 @@ class VoltageProtocol:
         for start, end in windows:
             start_t = times[start]
             end_t = times[end]
-
-            ramp = voltage_trace[end - 1] != voltage_trace[start]
-
             v_start = voltage_trace[start]
-
-            if ramp:
+            if voltage_trace[end - 1] != voltage_trace[start]:
+                # Ramp
                 grad = (voltage_trace[end - 1] - voltage_trace[start]) / \
                     (times[end - 1] - times[start])
                 v_end = v_start + grad * (end_t - start_t)
             else:
+                # Step
                 v_end = voltage_trace[end - 1]
 
             lst.append(np.array([start_t, end_t, v_start, v_end]))
 
-        desc = np.vstack(lst)
-        return cls(desc, holding_potential)
-
-    def __init__(self, desc, holding_potential):
-        self._desc = desc
-        self.holding_potential = holding_potential
+        return cls(np.vstack(lst), holding_potential, False)
 
     def get_holding_potential(self):
         """ Returns this protocol's holding potential. """
