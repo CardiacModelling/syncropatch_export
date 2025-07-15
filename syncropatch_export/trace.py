@@ -78,7 +78,7 @@ class Trace:
         """
         Returns unparsed JSON object representing the voltage protocol.
         """
-        #TODO Why only the first row?
+        # TODO Why only the first row?
         return self.meta['ExperimentConditions']['VoltageProtocol'][0]
 
     def get_protocol_description(self, holding_potential=-80.0):

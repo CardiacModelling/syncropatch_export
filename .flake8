@@ -9,10 +9,9 @@ ignore =
     W504,
     # missing whitespace around arithmetic operator
     E226,
-    # Import sorting
-    I201
-    I100
 
 exclude=
     .git,
+    .github,
     venv,
+    tests/test_data,
