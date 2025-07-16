@@ -9,20 +9,33 @@ from .voltage_protocols import VoltageProtocol
 
 
 class Trace:
-    """ Defines a Trace object from the output of a Nanion experiment.
+    """
+    Reads a Nanion experiment and provides access to the data and meta data it
+    contains.
 
-    @params
-    filepath: path pointing to folder containing .json and .dat files (str)
-    json_file: specific filename of json file (str)
+    To create a :class:`Trace`, a directory name should be passed in, along
+    with the name of a JSON file within that directory containing the meta
+    data. Data can then be accessed using :meth:`get_all_traces` (to obtain a
+    ``dict`` mapping well names onto a 2-d numpy array containing the sampled
+    currents (in pA) for all sweeps.
+
+    Well are
+
+
+
+    Args:
+        filepath (str): A path pointing to folder containing both ``.json`` and
+            ``.dat`` files.
+        json_file (str): The name of a JSON file within ``path``, from which
+            meta data will be read.
     """
 
     def __init__(self, filepath, json_file: str):
         # store file paths
         self.filepath = filepath
-        if json_file[-5:] == '.json':
-            self.json_file = json_file
-        else:
-            self.json_file = json_file + ".json"
+        self.json_file = json_file
+        if not json_file.endswith('.json'):
+            self.json_file += '.json'
 
         # load json file
         with open(os.path.join(self.filepath, self.json_file)) as f:
@@ -41,6 +54,13 @@ class Trace:
         self.MeasurementLayout = TraceHeader['MeasurementLayout']
         self.FileInformation = TraceHeader['FileInformation']
 
+        # Create (hardcoded) list-of-list of well names:
+        #  [['A01', 'B01', ..., 'P01'],
+        #   ['A02', 'B02', ..., 'P02'],
+        #   ...
+        #   ['A24', 'B24', ..., 'P24']]
+        # So a list of 24 lists with 16 entries each
+        #
         self.WELL_ID = np.array([
             [lab + str(i).zfill(2) for lab in string.ascii_uppercase[:16]]
             for i in range(1, 25)])
@@ -59,64 +79,77 @@ class Trace:
 
         self.voltage_protocol = self.get_voltage_protocol()
 
-    def get_voltage_protocol(self, holding_potential=-80.0):
-        """Extract information about the voltage protocol from the json file
-
-        returns: a VoltageProtocol object
-
+    def get_voltage_protocol(self):
         """
+        Extract information about the voltage protocol from the JSON file.
 
-        voltage_protocol = VoltageProtocol.from_json(
+        Returns:
+            The :class:`VoltageProtocol` used in this experiment.
+        """
+        return VoltageProtocol.from_json(
             self.meta['ExperimentConditions']['VoltageProtocol'],
             self.meta['ExperimentConditions']['VMembrane_mV']
         )
 
-        return voltage_protocol
-
     def get_voltage_protocol_json(self):
         """
-        Returns the voltage protocol as a JSON object
+        Returns an unparsed JSON object representing the first segment of the
+        voltage protocol.
         """
+        # TODO Why only the first row?
         return self.meta['ExperimentConditions']['VoltageProtocol'][0]
 
-    def get_protocol_description(self, holding_potential=-80.0):
-        """Get the protocol as a numpy array describing the voltages and
-        durations for each section
+    def get_protocol_description(self):
+        """
+        Returns the protocol as an ``np.numpy`` with an entry for each segment.
 
-        returns: np.array where each row contains the start time, end time,
-        initial voltage, and final voltage
+        Returns:
+            A numpy ``array`` where each row contains the start time, end time,
+            initial voltage, and final voltage of a ramp or step segment.
 
         """
         return self.get_voltage_protocol().get_all_sections()
 
     def get_voltage(self):
-        '''
-        Returns the voltage stimulus from Nanion .json file
-        '''
-        return np.array(self.TimeScaling['Stimulus']).astype(np.float64)\
-            * 1e3
+        """
+        Returns an array containing voltages (in mV) for each sampled point in
+        the traces.
+        """
+        return np.array(self.TimeScaling['Stimulus']).astype(np.float64) * 1e3
 
     def get_times(self):
-        '''
-        Returns the time steps from Nanion .json file
-        '''
+        """
+        Returns the sampled times (in ms).
+        """
         return np.array(self.TimeScaling['TR_Time']) * 1e3
 
     def get_all_traces(self, leakcorrect=False):
-        '''
+        """
+        Returns data for all wells and all sweeps (equivalent to calling
+        :meth:`get_trace_sweeps()` without any arguments).
 
-        Params:
-        leakcorrect: Bool. Set to true if using onboard leak correction
+        Current is returned in pA.
 
-        Returns: all raw current traces from .dat files
+        By default, the data is returned without leak correction, but the leak
+        corrected data can be obtained by setting ``leakcorrect=True``.
 
-        '''
+        Args:
+            sweeps (int): The number of sweeps to return.
+            leakcorrect (bool): Used to choose corrected or uncorrected data.
+
+        Returns:
+            A dictionary mapping well names (e.g. "A01") onto 2-d numpy arrays
+            of shape ``n_sweeps, n_times`` where ``n_sweeps`` is the number of
+            sweeps and ``n_times`` is the number of sampled points.
+
+        """
         return self.get_trace_sweeps(leakcorrect=leakcorrect)
 
     def get_trace_file(self, sweeps):
-        '''
-        Returns the trace file index of the file for a given set of sweeps
-        '''
+        """
+        Returns the trace file index
+         of the file for a given set of sweeps
+        """
         OUT_file_idx = []
         OUT_idx_i = []
         for actSweep in sweeps:
@@ -133,9 +166,24 @@ class Trace:
         return OUT_file_idx, OUT_idx_i
 
     def get_trace_sweeps(self, sweeps=None, leakcorrect=False):
-        '''
-        Returns a subset of sweeps defined by the input 'sweeps'
-        '''
+        """
+        Returns the first ``sweeps`` sweeps, for all wells.
+
+        Current is returned in pA.
+
+        By default, the data is returned without leak correction, but the leak
+        corrected data can be obtained by setting ``leakcorrect=True``.
+
+        Args:
+            sweeps (list): A list of sweep indexes to return, e.g. ``[0, 1, 2]``.
+            leakcorrect (bool): Used to choose corrected or uncorrected data.
+
+        Returns:
+            A dictionary mapping well names (e.g. "A01") onto 2-d numpy arrays
+            of shape ``n_sweeps, n_times`` where ``n_sweeps`` is the number of
+            sweeps and ``n_times`` is the number of sampled points.
+
+        """
 
         # initialise output
         out_dict = {}
@@ -143,18 +191,22 @@ class Trace:
             for ijWell in iCol:
                 out_dict[ijWell] = []
 
+        # No sweeps selected? Then return full set
         if sweeps is None:
-            #  Sometimes NofSweeps seems to be incorrect
             sweeps = list(range(self.NofSweeps))
-
-        # check `getsweep` input is something sensible
-        if len(sweeps) > self.NofSweeps:
-            raise ValueError('Required #sweeps > total #sweeps.')
-
-        # convert negative values to positive
-        for i, sweep in enumerate(sweeps):
-            if sweep < 0:
-                sweeps[i] = self.NofSweeps + sweep
+        else:
+            # Allow negative values to index later sweeps
+            sweeps = [self.NofSweeps + x if x < 0 else x for x in sweeps]
+            # Check all sweeps exist
+            if max(sweeps) >= self.NofSweeps:
+                raise ValueError(
+                    f'Invalid sweep selection: sweep {max(sweeps)} requested,'
+                    f' but only {self.NofSweeps} available.')
+            if min(sweeps) < 0:
+                raise ValueError(
+                    f'Invalid sweep selection: sweep'
+                    f' {min(sweeps) - self.NofSweeps} requested, but only'
+                    f' {self.NofSweeps} available.')
 
         trace_file_idxs, idx_is = self.get_trace_file(sweeps)
 
@@ -188,9 +240,7 @@ class Trace:
 
                 # convert to double in pA
                 iColTraces = trace[idx_i:idx_f] * self.I2DScale[i] * 1e12
-                iColWells = self.WELL_ID[i]
-
-                for j, ijWell in enumerate(iColWells):
+                for j, ijWell in enumerate(self.WELL_ID[i]):
                     if leakcorrect:
                         leakoffset = 1
                     else:
@@ -221,13 +271,15 @@ class Trace:
         return out_dict
 
     def get_onboard_QC_values(self, sweeps=None):
-        '''Read quality control values Rseal, Cslow (Cm), and Rseries from a Nanion .json file
+        """
+        Return the quality control values Rseal, Cslow (Cm), and Rseries.
 
-        returns: A dictionary where the keys are the well e.g. 'A01' and the
-        values are the values used for onboard QC i.e., the seal resistance,
-        cell capacitance and the series resistance.
+        Returns:
+            A dict mapping well names ('A01' up to 'P24') to tuples
+            ``(R_seal, Cm, R_series)`` containing the seal resistance, membrane
+            capacitance, and series resistance.
 
-        '''
+        """
 
         # load QC values
         RSeal = np.array(self.meta['QCData']['RSeal'])
@@ -262,11 +314,12 @@ class Trace:
         return out_dict
 
     def get_onboard_QC_df(self, sweeps=None):
-        """Create a Pandas DataFrame which lists the Rseries, memebrane
-        capacitance and Rseries for each well and sweep.
+        """
+        Create a Pandas DataFrame containing the seal resistance, membrane
+        capacitance, and series resistance for each well and sweep.
 
-        @Returns A pandas.DataFrame describing the onboard QC estimates for
-        each well, sweep
+        Returns:
+            A ``pandas.DataFrame`` with the onboard QC estimates.
 
         """
 
@@ -288,3 +341,4 @@ class Trace:
                 df_rows.append(df_row)
 
         return pd.DataFrame.from_records(df_rows)
+

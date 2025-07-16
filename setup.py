@@ -4,14 +4,17 @@ from setuptools import find_packages, setup
 with open('README.md') as f:
     readme = f.read()
 
+
 # Load version number
-# with open('version.txt', 'r') as f:
-#     version = f.read()
+import os   # isort:skip
+import sys  # isort:skip
+sys.path.append(os.path.abspath('syncropatch_export'))
+from _version import __version__ as version  # noqa isort:skip
+sys.path.pop()
+del os, sys
+
 
 # Go!
-
-version = '0.0.1'
-
 setup(
     # Module name (lowercase)
     name='syncropatch_export',
@@ -56,6 +59,9 @@ setup(
             'isort',
             'mock>=3.0.5',         # For mocking command line args etc.
             'codecov>=2.1.3',
+        ],
+        'docs': [
+            'sphinx>=1.7.4',
         ],
     },
 )
