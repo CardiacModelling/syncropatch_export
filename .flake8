@@ -13,5 +13,6 @@ ignore =
 exclude=
     .git,
     .github,
+    .venv,
     venv,
     tests/test_data,
