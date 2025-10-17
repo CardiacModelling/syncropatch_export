@@ -274,10 +274,16 @@ class Trace:
         """
         Return the quality control values Rseal, Cslow (Cm), and Rseries.
 
+        Args:
+            sweeps (list): A list of sweep indexes to return, e.g.
+            ``[0, 1, 2]``. If left at its default value ``None``, data for all
+            sweeps will be returned.
+
         Returns:
-            A dict mapping well names ('A01' up to 'P24') to tuples
-            ``(R_seal, Cm, R_series)`` containing the seal resistance, membrane
-            capacitance, and series resistance.
+            A dict mapping well names ('A01' up to 'P24') to lists of tuples
+            (one tuple per sweep), where each tuple ``(R_seal, Cm, R_series)``
+            provides the seal resistance, membrane capacitance, and series
+            resistance.
 
         """
 
