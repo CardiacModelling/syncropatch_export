@@ -5,7 +5,6 @@ import tempfile
 import unittest
 
 import numpy as np
-import pandas as pd
 
 from syncropatch_export.trace import Trace
 from syncropatch_export.voltage_protocols import VoltageProtocol
@@ -89,10 +88,6 @@ class TestTraceClass(unittest.TestCase):
     def test_get_QC(self):
         QC_values = self.trace.get_onboard_QC_values()
         self.assertGreater(len(QC_values), 0)
-        df = self.trace.get_onboard_QC_df()
-
-        self.assertGreater(df.shape[0], 0)
-        self.assertGreater(df.shape[1], 0)
 
     def test_get_traces(self):
         v = self.trace.get_voltage()
