@@ -119,47 +119,6 @@ class TestTraceClass(unittest.TestCase):
         self.assertRaisesRegex(ValueError, 'Invalid sweep selection',
                                self.trace.get_trace_sweeps, [-3])
 
-        '''
-        # plot test output
-        if False:
-            d = 'test_output'
-            if not os.path.exists(d):
-                os.makedirs(d)
-
-            import matplotlib.pyplot as plt
-            fig, (ax1, ax2) = plt.subplots(2, 1)
-            ax1.set_title('Example Sweeps')
-            some_sweeps = self.trace.get_trace_sweeps([0])['A01']
-
-            ax1.plot(ts, np.transpose(some_sweeps), color='grey', alpha=0.5)
-            ax1.set_ylabel('Current')
-            ax1.set_xlabel('Time')
-            ax2.set_title('Voltage Protocol')
-            ax2.plot(ts, v)
-            ax2.set_ylabel('Voltage')
-            ax2.set_xlabel('Time')
-            plt.tight_layout()
-            plt.savefig(os.path.join(d, 'example_trace'))
-            plt.close(fig)
-        '''
-
-    def test_qc_df(self):
-        dfs = [self.trace.get_onboard_QC_df(sweeps=[0]),
-               self.trace.get_onboard_QC_df(sweeps=None)]
-        for res in dfs:
-            # Check res is a pd.DataFrame
-            self.assertIsInstance(res, pd.DataFrame)
-
-            # Check it contains data (number of rows>0)
-            self.assertGreater(res.shape[0], 0)
-
-            # Check it contains all quality control parameters
-            for qcParam in ['Rseal', 'Cm', 'Rseries', 'well', 'sweep']:
-                self.assertIn(qcParam, res)
-
-        # Check restricting number of sweeps returns less data
-        self.assertLess(dfs[0].shape[0], dfs[1].shape[0])
-
 
 if __name__ == '__main__':
     unittest.main()  # pragma: no cover

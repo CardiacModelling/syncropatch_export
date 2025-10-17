@@ -319,32 +319,3 @@ class Trace:
 
         return out_dict
 
-    def get_onboard_QC_df(self, sweeps=None):
-        """
-        Create a Pandas DataFrame containing the seal resistance, membrane
-        capacitance, and series resistance for each well and sweep.
-
-        Returns:
-            A ``pandas.DataFrame`` with the onboard QC estimates.
-
-        """
-
-        QC_dict = self.get_onboard_QC_values(sweeps)
-
-        if sweeps is None:
-            sweeps = list(range(self.NofSweeps))
-
-        df_rows = []
-        for sweep in sweeps:
-            for well in self.WELL_ID.flatten():
-                Rseal, Capacitance, Rseries = QC_dict[well][sweep]
-                df_row = {'Rseal': Rseal,
-                          'Cm': Capacitance,
-                          'Rseries': Rseries,
-                          'well': well,
-                          'sweep': sweep
-                          }
-                df_rows.append(df_row)
-
-        return pd.DataFrame.from_records(df_rows)
-
