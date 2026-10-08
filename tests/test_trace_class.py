@@ -90,17 +90,24 @@ class TestTraceClass(unittest.TestCase):
         self.assertGreater(len(QC_values), 0)
 
     def test_get_traces(self):
+
+        # Check well ids
+        self.assertEqual(self.trace.WELL_ID[3, 2], 'C04')
+        self.assertEqual(len(self.trace.WELL_ID), 24)
+        self.assertEqual(len(self.trace.WELL_ID[0]), 16)
+
+        # Check voltage and time
         v = self.trace.get_voltage()
         ts = self.trace.get_times()
-        all_traces = self.trace.get_all_traces(leakcorrect=True)
-        all_traces = self.trace.get_all_traces()
-        # TODO: Check the output, numerically, by comparing a few points
-
         self.assertTrue(np.all(np.isfinite(v)))
         self.assertTrue(np.all(np.isfinite(ts)))
 
+        # Check traces
+        all_traces = self.trace.get_all_traces(leakcorrect=True)
+        all_traces = self.trace.get_all_traces()
         for well, trace in all_traces.items():
             self.assertTrue(np.all(np.isfinite(trace)))
+        # TODO: Check the output, numerically, by comparing a few points
 
         # Test complex sweep selection
         a = self.trace.get_trace_sweeps([-1, -2])

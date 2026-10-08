@@ -58,14 +58,15 @@ class Trace:
         #   ...
         #   ['A24', 'B24', ..., 'P24']]
         # So a list of 24 lists with 16 entries each
+        # "rows" here is columns in the above matrix!
         self.WP_nRows = TraceHeader['Chiplayout']['WP_nRows']
         self.WP_nCols = TraceHeader['Chiplayout']['WP_nCols']
-        if self.WP_nCols > 99:
-            raise NotImplementedError(  # pragma: no cover
-                'Unsupported chip layout (more than 99 columns)')
         if self.WP_nRows > 26:
             raise NotImplementedError(  # pragma: no cover
                 'Unsupported chip layout (more than 26 rows)')
+        if self.WP_nCols > 99:
+            raise NotImplementedError(  # pragma: no cover
+                'Unsupported chip layout (more than 99 columns)')
         abc = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
         self.WELL_ID = np.array([
             [f'{abc[i]}{j:>02}' for i in range(self.WP_nRows)]
