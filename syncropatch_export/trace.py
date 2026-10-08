@@ -1,6 +1,5 @@
 import json
 import os
-import string
 
 import numpy as np
 
@@ -53,20 +52,28 @@ class Trace:
         self.MeasurementLayout = TraceHeader['MeasurementLayout']
         self.FileInformation = TraceHeader['FileInformation']
 
-        # Create (hardcoded) list-of-list of well names:
+        # Create list-of-list of well names, e.g. for SyncroPatch:
         #  [['A01', 'B01', ..., 'P01'],
         #   ['A02', 'B02', ..., 'P02'],
         #   ...
         #   ['A24', 'B24', ..., 'P24']]
         # So a list of 24 lists with 16 entries each
-        #
-        self.WELL_ID = np.array([
-            [lab + str(i).zfill(2) for lab in string.ascii_uppercase[:16]]
-            for i in range(1, 25)])
-
-        self.NofSweeps = self.MeasurementLayout['NofSweeps']
+        # "rows" here is columns in the above matrix!
         self.WP_nRows = TraceHeader['Chiplayout']['WP_nRows']
         self.WP_nCols = TraceHeader['Chiplayout']['WP_nCols']
+        if self.WP_nRows > 26:
+            raise NotImplementedError(  # pragma: no cover
+                'Unsupported chip layout (more than 26 rows)')
+        if self.WP_nCols > 99:
+            raise NotImplementedError(  # pragma: no cover
+                'Unsupported chip layout (more than 99 columns)')
+        abc = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        self.WELL_ID = np.array([
+            [f'{abc[i]}{j:>02}' for i in range(self.WP_nRows)]
+            for j in range(1, self.WP_nCols + 1)
+        ])
+
+        self.NofSweeps = self.MeasurementLayout['NofSweeps']
         self.nCols = self.MeasurementLayout['nCols']
         self.NofSamples = self.MeasurementLayout['NofSamples']
         self.Leakdata = self.MeasurementLayout['Leakdata']
