@@ -52,7 +52,7 @@ class Trace:
         self.MeasurementLayout = TraceHeader['MeasurementLayout']
         self.FileInformation = TraceHeader['FileInformation']
 
-        # Create list-of-list of well names:
+        # Create list-of-list of well names, e.g. for SyncroPatch:
         #  [['A01', 'B01', ..., 'P01'],
         #   ['A02', 'B02', ..., 'P02'],
         #   ...
@@ -60,16 +60,16 @@ class Trace:
         # So a list of 24 lists with 16 entries each
         self.WP_nRows = TraceHeader['Chiplayout']['WP_nRows']
         self.WP_nCols = TraceHeader['Chiplayout']['WP_nCols']
-        if self.WP_nCols > 26:
+        if self.WP_nCols > 99:
             raise NotImplementedError(  # pragma: no cover
-                'Unsupported chip layout (more than 26 columns)')
-        if self.WP_nRows > 100:
+                'Unsupported chip layout (more than 99 columns)')
+        if self.WP_nRows > 26:
             raise NotImplementedError(  # pragma: no cover
-                'Unsupported chip layout (more than 100 rows)')
+                'Unsupported chip layout (more than 26 rows)')
         abc = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
         self.WELL_ID = np.array([
-            [f'{abc[i]}{j:>02}' for j in range(self.WP_nRows)]
-            for i in range(self.WP_nCols)
+            [f'{abc[i]}{j:>02}' for i in range(self.WP_nRows)]
+            for j in range(1, self.WP_nCols + 1)
         ])
 
         self.NofSweeps = self.MeasurementLayout['NofSweeps']
